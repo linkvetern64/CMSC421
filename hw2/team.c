@@ -2,13 +2,29 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <unistd.h> 
+void childProcess(void); //Prototype of child process
+void parentProcess(void); //Prototype of parent process
 
 int main(int argc, char *argv[]){
   if(argc != 5){
     return 0;
   }
-  int input;
-  int selection = 0;
+  //int input;
+  //int selection = 0;
+
+  int pid = fork();
+  printf("PID = %d", pid);
+  if(pid == 0){
+    childProcess();
+    execlp("./player", "23", NULL);
+  }
+  else{
+    parentProcess();
+    
+  }
+  
+  /*
   //Menu
   while(true){
   printf("Main Menu:\n");
@@ -27,5 +43,14 @@ int main(int argc, char *argv[]){
     printf("Name %d - %s\n",i, argv[i]);
   }
   fclose(file);
+  */
   return 0;
+}
+
+void childProcess(void){
+  printf("Child Process\n");
+}
+
+void parentProcess(void){
+  printf("Parent Process\n");
 }
