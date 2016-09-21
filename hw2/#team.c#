@@ -12,7 +12,7 @@ int main(int argc, char *argv[]){
   }
   //int input;
   //int selection = 0;
-  int pid = fork();
+  
   for(int i = 0; i < 4; i++){
   
     printf("CP - %d & PID = %d",i, pid);
