@@ -1,4 +1,6 @@
 
+//#define _POSIX_SOURCE
+#include <signal.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -39,8 +41,15 @@ int main(int argc, char *argv[]){
       break;
     }
   }
+    
   for(int j = 0; j < 4; j++){
     printf("PID for child %d = %d\n", j, PID[j]);
+    if(kill(PID[j]) == 0){
+	printf("Succeeded in killing PID\n");
+      }
+      else{
+	printf("Failed to kill PID\n");
+      }
   }
   
   /*
