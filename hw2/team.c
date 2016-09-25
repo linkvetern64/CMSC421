@@ -2,7 +2,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <unistd.h> 
+#include <unistd.h>
+#include <sys/types.h>
 void childProcess(void); //Prototype of child process
 void parentProcess(void); //Prototype of parent process
 
@@ -12,18 +13,36 @@ int main(int argc, char *argv[]){
   }
   //int input;
   //int selection = 0;
-  int pid = fork();
-  for(int i = 0; i < 4; i++){
+
+  int pid;
+  int PID[4];
+  //int fd[2];
+  //pipe(fd);
+  //Creates forked processes
   
-    printf("CP - %d & PID = %d",i, pid);
-    if(pid == 0){
-      childProcess();
-      execlp("./player", "23", NULL);
-    }
-    else{
-      parentProcess();
+  for(int i = 0; i <= 3; i++){
+    switch(pid = fork()){
+    case 0:
+      printf("Child process\n");
+      //childProcess();
+      //child process
+      return 0;
+   
+    case -1:
+      //Error - do nothing
+      printf("Error in forking\n");
+      break;
+    default:
+      PID[i] = pid;
+      //parent process
+      //parentProcess();
+      break;
     }
   }
+  for(int j = 0; j < 4; j++){
+    printf("PID for child %d = %d\n", j, PID[j]);
+  }
+  
   /*
   //Menu
   while(true){
@@ -49,8 +68,10 @@ int main(int argc, char *argv[]){
 
 void childProcess(void){
   printf("Child Process\n");
+  //close(fd[1]);
 }
 
 void parentProcess(void){
   printf("Parent Process\n");
+  //close(fd[0]);
 }
