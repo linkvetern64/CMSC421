@@ -3,43 +3,38 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <unistd.h>
 
 int numHandles = 0;
 
 void my_handler(int);
-
+static void fault_handler(int signum){
+  
+  printf("Caught signal number %d\n", signum);
+  
+}
 int main(int argc, char *argv[]){
-  usleep(100); //So players load in after menu
+    
   char * name = argv[1];
   char * position = argv[2];
-  int fd[2];
-  close(fd[0]);
-  close(fd[1]);
-  dup2(fd, STDIN_FILENO);
+
   sigset_t mask;
   sigemptyset(&mask);
   struct sigaction sa = {
-    .sa_handler = my_handler,
+    .sa_handler = fault_handler,
     .sa_mask = mask,
     .sa_flags = 0
   };
-  sigaction(SIGUSR1, &sa, NULL);
-  sigaction(SIGUSR2, &sa, NULL);
+  sigaction(SIGUSR1, &sa, );
+ 
   printf("#%ld:%s (%s)\n",getpid(), name, position);
-  
-  while(1){
-    sleep(1);
-  }
+  signal(SIGUSR1, fault_handler);
+  for(;;);
   return 0;
 }
 
 void my_handler(int sig){
   if(sig == SIGUSR1){   
     numHandles++;
-    printf("%d - Caught signal SIGUSR1 %d times.\n", getpid(), numHandles);
-  }
-  else if(sig == SIGUSR2){
-    printf("Caught SIGUSR2\n");
+    printf("%d - Caught signal SIGUSR1 times.\n", getpid());
   }
 }
