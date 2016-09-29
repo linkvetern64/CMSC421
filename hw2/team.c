@@ -28,7 +28,7 @@ int main(int argc, char *argv[]){
   int selection = 9;
   int PID[4];
   int fd[8];
-
+  char * buf[255];
   pipe(fd);
   pipe(fd + 2);
   pipe(fd + 4);
@@ -39,16 +39,17 @@ int main(int argc, char *argv[]){
     switch(pid = fork()){
     //Child process
     case 0:
+      //pipe(fd + i * 2);
       //Close Read
       if(dup2(fd[i * 2], STDIN_FILENO) == -1){
 	printf("dup2 error\n");
       }
       
       //printf("Testing %d, %d\n", (i * 2), (1 + i * 2)); 
-      close(fd[i * 2]);
-      close(fd[1 + i * 2]);
+      //close(fd[i * 2]);
+      //close(fd[1 + i * 2]);
       
-      wait();
+      //dup2(0, fd[i*2]);
       execlp("./player", "player", argv[i + 1],positions[i], NULL);
       return 0;
    
@@ -58,12 +59,20 @@ int main(int argc, char *argv[]){
 
     //Parent process  
     default:
-      close(fd[1 + i * 2]);
+      //close(fd[1 + i * 2]);
       PID[i] = pid;
       break;
     }
   }
-
+  
+  char str[10];
+  for(int i = 0; i < 4; i++){
+    for(int j = 0; j < 4; j++){
+      sprintf(str, "%d", PID[j]);
+      dprintf(fd[1 + i * 2], "%s ", str);
+    }
+  }
+   
   if(getpid() > 0){
     while(selection > -1){
 	printf("Main Menu:\n");
@@ -74,6 +83,7 @@ int main(int argc, char *argv[]){
 	selection = scanf("%d", &input);
 
 	switch(input){
+	  //Throwing ball
 	case 1:
 	  printf("Throwing ball to who?\n");
 	  for(int i = 1; i < 5; i++){
@@ -102,40 +112,34 @@ int main(int argc, char *argv[]){
 	    break;
 	  }
 	  break;
-	  
+	  //Fielding ball
 	case 2:
 	  printf("Fielding ball...\n");
 	  break;
 	  
+	  //prints player stats
 	case 3:
-	  printf("Showing player stats...\n");
+	  printf("in case 3 \n");
+	  for(int i = 0; i < 4; i++){
+	    if(write(fd[1 + i * 2], "Test", 20) < 1){
+	      printf("failed writing to file descriptor");
+	    }
+	    usleep(200);
+	  }
 	  break;
 	  
 	case 4:
 	  printf("Ending game...\n");
 	  for(int i = 0; i < 4; i++){
 	    kill(PID[i], SIGQUIT);
+	    //Terminates user
+	    //signal(PID[i], SIGUSR1);
+	    waitpid();
 	  }
 	  waitpid();
 	  return 0;
 	  break;
-	  
-	case 5:
-	  //Test FD is open / closed
-	  /*if(fcntl(fd, F_GETFD) == -1){
-	    printf("Failure\n");
-	  }
-	  else{
-	    printf("Success\n");
-	  }*/
-	  if(close(fd[2])){
-	    perror("Close");
-	  }
-	  else{
-	    printf("All good\n");
-	  }
-	  break;
-
+	
 	case 6:
 	  fp = open("/dev/urandom", 00);
 	  if(fp < 0){
@@ -165,7 +169,5 @@ int main(int argc, char *argv[]){
 	}	
       }
   }
- 
-  
   return 0;
 }
