@@ -1,9 +1,9 @@
 /**
  * @Author Joshua Standiford (jstand1@umbc.edu)
- * This file accepts a single argument.  The program then attempts
- * to find the matching interrupt number in the /proc/interrupts/ file.
- * If the number or driver doesn't exist nothing is printed.  
- * Otherwise the driver name is printed.
+ * This file will be the parent process to 4 player child processes
+ * It will take 4 names, distribute them among the process names.
+ * The children will keep track of each other and keep track of
+ * number of signals sent to it.
  */
 #define _POSIX_SOURCE
 #include <signal.h>

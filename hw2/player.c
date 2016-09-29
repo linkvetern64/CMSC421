@@ -1,3 +1,10 @@
+/**
+ * @Author Joshua Standiford (jstand1@umbc.edu)
+ * This file accepts a single argument.  The program then attempts
+ * to find the matching interrupt number in the /proc/interrupts/ file.
+ * If the number or driver doesn't exist nothing is printed.  
+ * Otherwise the driver name is printed.
+ */
 #define _POSIX_SOURCE
 #include <signal.h>
 #include <stdio.h>
@@ -20,6 +27,21 @@ int getHandles(void);
 int getRand(void);
 //End function prototypes
 
+/**
+ * function - main():
+ * Pre-conditions:  name and position passed in via arguments
+ * Post-conditions: player process is created that reads and handles signals
+ *
+ * Description: 
+ * This function contains the logic for handling signal processing and STDIN_FILENO writing.
+ * First a name and position are read by this program.  Then the parent process will write 4 PID's
+ * to the child processes.  Then this program will step into a loop that will listen for write calls
+ * or signals.  
+ * SIGUSR1 - Will increment numHandles by 1.
+ * SIGUSR2 - Will pass the ball randomly until it reaches child of position 1B.  
+ *           everytime the child handles the ball numHandles incrememnts by 1.
+ * Read()  - Will read from STDIN_FILENO and display the player statistics
+ */
 int main(int argc, char *argv[]){
   usleep(100); //So players load in after menu
   name = argv[1];
@@ -75,6 +97,16 @@ int main(int argc, char *argv[]){
   return 0;
 }
 
+/**
+ * function - my_handler :
+ * Parameter: int sig, will be the integer value of incoming signal
+ * Pre-conditions:  None
+ * Post-conditions: Signal handler will call appropriate action internally
+ *
+ * Description: 
+ * This function takes in the integer value of a signal sent by the parent.
+ * This number will be handled and will be either SIGUSR1 or SIGUSR2
+ */
 void my_handler(int sig){
   if(sig == SIGUSR1){   
     numHandles++;
@@ -98,10 +130,27 @@ void my_handler(int sig){
   }
 }
 
+/**
+ * function - getHandles:
+ * Pre-conditions: None
+ * Post-conditions: Returns numbHandles value
+ *
+ * Description: 
+ * Returns int value of var numHandles
+ */
 int getHandles(){
   return numHandles;
 }
 
+/**
+ * function - getRand():
+ * Pre-conditions: None
+ * Post-conditions: A random number of range 0 - 3 will be returned
+ *
+ * Description: 
+ * This function reads from dev/urandom a random number and modulus 4 of the number
+ * will return 0 - 3
+ */
 int getRand(){
   int file;
   unsigned int rand;
