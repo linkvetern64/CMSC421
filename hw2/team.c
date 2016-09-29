@@ -168,7 +168,7 @@ int main(int argc, char *argv[]){
 	//prints player stats
 	case 3:
 	  for(int i = 0; i < 4; i++){
-	    if(write(fd[1 + i * 2], "Test", 20) < 1){
+	    if(write(fd[1 + i * 2], "t", 8) < 1){
 	      printf("failed writing to file descriptor");
 	    }
 	    usleep(200);

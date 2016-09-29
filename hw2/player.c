@@ -26,7 +26,7 @@ int main(int argc, char *argv[]){
   position = argv[2];
   int fd[2];
   char * buf[50];
-  char * buff[20];
+  char * buff[8];
   char * players;
   positions[0] = "1B";
   positions[1] = "2B";
@@ -68,7 +68,7 @@ int main(int argc, char *argv[]){
   while(1){
     sleep(1);
     //Doesn't matter whats sent, expect read() bigger than 0
-    if(read(STDIN_FILENO, &buff, 20) > 0){
+    if(read(STDIN_FILENO, &buff, 8) > 0){
       printf("Player %d caught ball %d times.\n",getpid(), getHandles());
     }
   }
