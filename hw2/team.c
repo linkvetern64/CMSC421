@@ -5,7 +5,10 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 #include <errno.h>
+#include <stdint.h>
 
 int main(int argc, char *argv[]){
   //Exits program if too many or too little arguments
@@ -13,10 +16,13 @@ int main(int argc, char *argv[]){
     printf("Error too many or too little arguments.  Need exactly 4\n");
     return 0;
   }
-
+  int myFile;
+  unsigned int rand;
+  uint16_t randomNum;
   char * players[4];
   char * positions[4];
   char a;
+  char * buffer[20];
   int fp;
   int fdT;
   positions[0] = "1B";
@@ -39,14 +45,13 @@ int main(int argc, char *argv[]){
     switch(pid = fork()){
     //Child process
     case 0:
-      //pipe(fd + i * 2);
+      
       //Close Read
       if(dup2(fd[i * 2], STDIN_FILENO) == -1){
 	printf("dup2 error\n");
       }
       
-      //printf("Testing %d, %d\n", (i * 2), (1 + i * 2)); 
-      //close(fd[i * 2]);
+      close(fd[i * 2]);
       //close(fd[1 + i * 2]);
       
       //dup2(0, fd[i*2]);
@@ -59,12 +64,12 @@ int main(int argc, char *argv[]){
 
     //Parent process  
     default:
-      //close(fd[1 + i * 2]);
       PID[i] = pid;
       break;
     }
   }
   
+  //Send PID's to child processes
   char str[10];
   for(int i = 0; i < 4; i++){
     for(int j = 0; j < 4; j++){
@@ -112,14 +117,39 @@ int main(int argc, char *argv[]){
 	    break;
 	  }
 	  break;
-	  //Fielding ball
+
+	//Fielding ball
 	case 2:
-	  printf("Fielding ball...\n");
+	  printf("Fielding ball to who?\n");
+	  for(int i = 1; i < 5; i++){
+	    printf("%d %s\n", i, argv[i]);
+	  }
+	  selection = scanf("%d", &playerTo);
+	  switch(playerTo){
+	  case 1:
+	    kill(PID[0], SIGUSR2);
+	    break;
+	    
+	  case 2:
+	    kill(PID[1], SIGUSR2);
+	    break;
+	    
+	  case 3:
+	    kill(PID[2], SIGUSR2);	    
+	    break;
+	    
+	  case 4:
+	    kill(PID[3], SIGUSR2);
+	    break;
+     
+	  default:
+	    printf("Illegal entry, returning to main menu\n");
+	    break;
+	  }
 	  break;
 	  
-	  //prints player stats
+	//prints player stats
 	case 3:
-	  printf("in case 3 \n");
 	  for(int i = 0; i < 4; i++){
 	    if(write(fd[1 + i * 2], "Test", 20) < 1){
 	      printf("failed writing to file descriptor");
@@ -132,37 +162,11 @@ int main(int argc, char *argv[]){
 	  printf("Ending game...\n");
 	  for(int i = 0; i < 4; i++){
 	    kill(PID[i], SIGQUIT);
-	    //Terminates user
-	    //signal(PID[i], SIGUSR1);
-	    waitpid();
 	  }
 	  waitpid();
 	  return 0;
 	  break;
-	
-	case 6:
-	  fp = open("/dev/urandom", 00);
-	  if(fp < 0){
-	    fprintf(stderr, "Error opening\n");
-	  }
-	  else{
-	    printf("Opened FD %d\n",fp);
-	  }
-
-	  char buf[1];
-	  
-	  size_t amount_to_read = sizeof(buf); 
-	  ssize_t amount_read = read(fp, buf, amount_to_read); 
-	  if(amount_read < 0) { 
-	    fprintf(stderr,"Error reading\n"); 
-	  } 
-	  else
-	    { 
-	      printf("Read %zd bytes\n", amount_read);
-	      printf("%d\n", ((int)buf)%4);
-	    }
-	  close(fp);
-	  break;
+       
 	default:
 	  printf("Value of input is %d\n", input);
 	  break;

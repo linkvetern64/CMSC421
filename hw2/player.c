@@ -4,23 +4,32 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
-
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <stdint.h>
 int numHandles = 0;
-
+char * positions[4];
+int randPos;
+int PID[4];
+char * position;
+char * name;
+//Function prototypes
 void my_handler(int);
-
 int getHandles(void);
+int getRand(void);
+//End function prototypes
 
 int main(int argc, char *argv[]){
   usleep(100); //So players load in after menu
-  char * name = argv[1];
-  char * position = argv[2];
+  name = argv[1];
+  position = argv[2];
   int fd[2];
   char * buf[50];
   char * buff[20];
-  int PID[4];
+  //int PID[4];
   char * players;
-  char * positions[4];
+  //char * positions[4];
   positions[0] = "1B";
   positions[1] = "2B";
   positions[2] = "SS";
@@ -30,7 +39,8 @@ int main(int argc, char *argv[]){
   //close(fd[0]);
   //close(fd[1]);
   dup2(fd, STDIN_FILENO);
-  
+
+  //This read loops reads the PID's from the parent process
   char * pch;
   int k = 0;
   while(1){
@@ -73,13 +83,37 @@ int main(int argc, char *argv[]){
 void my_handler(int sig){
   if(sig == SIGUSR1){   
     numHandles++;
-    printf("%d - Caught signal SIGUSR1 %d times.\n", getpid(), numHandles);
+    printf("%s caught the ball.\n", name);
   }
   else if(sig == SIGUSR2){
-    printf("Caught SIGUSR2\n");
+    numHandles++;
+    printf("%s caught the ball\n", name);
+    //printf("Caught SIGUSR2\n");
+    if(!strcmp(position, "1B")){
+      printf("arrived at first base\n");
+    }
+    else{
+      randPos = getRand();
+      do{
+	randPos = getRand();
+      }
+      while(!strcmp(positions[randPos], position));
+      printf("Throwing the ball to #%d %s\n", PID[randPos], positions[randPos]);
+      kill(PID[randPos], SIGUSR2);
+    }
   }
 }
 
 int getHandles(){
   return numHandles;
+}
+
+int getRand(){
+  int myFile;
+  unsigned int rand;
+  uint16_t randomNum;
+  myFile = open("/dev/urandom", O_RDONLY);	  
+  randomNum = read(myFile, &rand, sizeof(rand));
+  close(myFile);
+  return (rand % 4);
 }
