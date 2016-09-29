@@ -1,3 +1,10 @@
+/**
+ * @Author Joshua Standiford (jstand1@umbc.edu)
+ * This file accepts a single argument.  The program then attempts
+ * to find the matching interrupt number in the /proc/interrupts/ file.
+ * If the number or driver doesn't exist nothing is printed.  
+ * Otherwise the driver name is printed.
+ */
 #define _POSIX_SOURCE
 #include <signal.h>
 #include <stdio.h>
@@ -10,21 +17,34 @@
 #include <errno.h>
 #include <stdint.h>
 
+/**
+ * function - main():
+ * Pre-conditions:  4 player names
+ * Post-conditions: 4 child processes will be created
+ *
+ * Description: 
+ * This function contains the logic for first reading the command line 
+ * for 4 child arguments.  Any less or more and the program exits.
+ *
+ * 4 child processes are then created and their PID's are written to them.
+ * a menu opens up once the children processes are successfully created.
+ * this menu allows interaction with the child processes in the form of baseball.
+ * Menu options:
+ * 1, SIGUSR1 is sent to childs PID and signal handler increments a global var by 1
+ * 2, SIGUSR2 is sent to a childs PID.  If 1B then do nothing, otherwise keep passing
+ *    the ball until it reaches 1st base.  Increment each number of handles each time.
+ * 3, Writes a byte to each child process which alerts them to print their statistics
+ * 4, The Program is killed and waitpid() is called so the child processes shut down
+ */
 int main(int argc, char *argv[]){
   //Exits program if too many or too little arguments
   if(argc != 5){
     printf("Error too many or too little arguments.  Need exactly 4\n");
     return 0;
   }
-  int myFile;
-  unsigned int rand;
-  uint16_t randomNum;
+
   char * players[4];
   char * positions[4];
-  char a;
-  char * buffer[20];
-  int fp;
-  int fdT;
   positions[0] = "1B";
   positions[1] = "2B";
   positions[2] = "SS";
@@ -52,9 +72,6 @@ int main(int argc, char *argv[]){
       }
       
       close(fd[i * 2]);
-      //close(fd[1 + i * 2]);
-      
-      //dup2(0, fd[i*2]);
       execlp("./player", "player", argv[i + 1],positions[i], NULL);
       return 0;
    

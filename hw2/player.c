@@ -27,17 +27,13 @@ int main(int argc, char *argv[]){
   int fd[2];
   char * buf[50];
   char * buff[20];
-  //int PID[4];
   char * players;
-  //char * positions[4];
   positions[0] = "1B";
   positions[1] = "2B";
   positions[2] = "SS";
   positions[3] = "3B";
   
-  
-  //close(fd[0]);
-  //close(fd[1]);
+  close(fd[1]);
   dup2(fd, STDIN_FILENO);
 
   //This read loops reads the PID's from the parent process
@@ -57,7 +53,8 @@ int main(int argc, char *argv[]){
       break;
     }
   }
-  
+  printf("#%ld:%s (%s)\n",getpid(), name, position);
+
   sigset_t mask;
   sigemptyset(&mask);
   struct sigaction sa = {
@@ -68,11 +65,9 @@ int main(int argc, char *argv[]){
   sigaction(SIGUSR1, &sa, NULL);
   sigaction(SIGUSR2, &sa, NULL);
   
-  //MAKE TWO WHILE LOOPS MAYBE? BREAK AFTER PIDS STORED
-  printf("#%ld:%s (%s)\n",getpid(), name, position);
   while(1){
     sleep(1);
-    //Doesn't matter whats send, expect read() bigger than 0
+    //Doesn't matter whats sent, expect read() bigger than 0
     if(read(STDIN_FILENO, &buff, 20) > 0){
       printf("Player %d caught ball %d times.\n",getpid(), getHandles());
     }
@@ -88,9 +83,8 @@ void my_handler(int sig){
   else if(sig == SIGUSR2){
     numHandles++;
     printf("%s caught the ball\n", name);
-    //printf("Caught SIGUSR2\n");
     if(!strcmp(position, "1B")){
-      printf("arrived at first base\n");
+      //printf("arrived at first base\n");
     }
     else{
       randPos = getRand();
@@ -109,11 +103,11 @@ int getHandles(){
 }
 
 int getRand(){
-  int myFile;
+  int file;
   unsigned int rand;
   uint16_t randomNum;
-  myFile = open("/dev/urandom", O_RDONLY);	  
-  randomNum = read(myFile, &rand, sizeof(rand));
-  close(myFile);
+  file = open("/dev/urandom", O_RDONLY);	  
+  randomNum = read(file, &rand, sizeof(rand));
+  close(file);
   return (rand % 4);
 }
