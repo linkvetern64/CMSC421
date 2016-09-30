@@ -14,6 +14,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <time.h>
 #include <stdint.h>
 int numHandles = 0;
 char * positions[4];
@@ -43,7 +44,7 @@ int getRand(void);
  * Read()  - Will read from STDIN_FILENO and display the player statistics
  */
 int main(int argc, char *argv[]){
-  usleep(100); //So players load in after menu
+  sleep(1); //So players load in after menu
   name = argv[1];
   position = argv[2];
   int fd[2];
@@ -54,17 +55,15 @@ int main(int argc, char *argv[]){
   positions[1] = "2B";
   positions[2] = "SS";
   positions[3] = "3B";
-  
-  close(fd[1]);
-  dup2(fd, STDIN_FILENO);
-
+ 
+  dup2(fd[0], STDIN_FILENO);
   //This read loops reads the PID's from the parent process
   char * pch;
   int k = 0;
   while(1){
     sleep(1);
     if(read(STDIN_FILENO, &buf, 50) > 0){
-      players = &buf;
+players = (char *)&buf;
       pch = strtok(players, " ");
       while(pch != NULL){
  	PID[k] = atoi(pch);
@@ -75,7 +74,7 @@ int main(int argc, char *argv[]){
       break;
     }
   }
-  printf("#%ld:%s (%s)\n",getpid(), name, position);
+  printf("#%d:%s (%s)\n",(int)getpid(), name, position);
 
   sigset_t mask;
   sigemptyset(&mask);
@@ -154,9 +153,13 @@ int getHandles(){
 int getRand(){
   int file;
   unsigned int rand;
-  uint16_t randomNum;
+  int errNum;
   file = open("/dev/urandom", O_RDONLY);	  
-  randomNum = read(file, &rand, sizeof(rand));
+  errNum = read(file, &rand, sizeof(rand));
+  if(errNum < 0 ){
+    perror("Failure");
+  }
+  
   close(file);
   return (rand % 4);
 }

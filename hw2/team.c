@@ -6,16 +6,20 @@
  * number of signals sent to it.
  */
 #define _POSIX_SOURCE
+#define _POSIX_C_SOURCE 200809L
+#define _GNU_SOURCE
 #include <signal.h>
-#include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/types.h>
+#include <sys/wait.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <errno.h>
 #include <stdint.h>
+#include <time.h>
+#include <stdio.h>
 
 /**
  * function - main():
@@ -43,7 +47,7 @@ int main(int argc, char *argv[]){
     return 0;
   }
 
-  char * players[4];
+  //char * players[4];
   char * positions[4];
   positions[0] = "1B";
   positions[1] = "2B";
@@ -51,15 +55,17 @@ int main(int argc, char *argv[]){
   positions[3] = "3B";
   int input, playerTo;
   int pid;
+  int catch;
   int selection = 9;
   int PID[4];
   int fd[8];
-  char * buf[255];
-  pipe(fd);
-  pipe(fd + 2);
-  pipe(fd + 4);
-  pipe(fd + 6);
-  
+  catch = pipe(fd);
+  catch = pipe(fd + 2);
+  catch = pipe(fd + 4);
+  catch = pipe(fd + 6);
+  if(catch < 0){
+    perror("Failed to pipe");
+  }
   //Creates forked processes
   for(int i = 0; i <= 3; i++){
     switch(pid = fork()){
@@ -171,7 +177,7 @@ int main(int argc, char *argv[]){
 	    if(write(fd[1 + i * 2], "t", 8) < 1){
 	      printf("failed writing to file descriptor");
 	    }
-	    usleep(200);
+	    sleep(1);
 	  }
 	  break;
 	  
@@ -179,8 +185,9 @@ int main(int argc, char *argv[]){
 	  printf("Ending game...\n");
 	  for(int i = 0; i < 4; i++){
 	    kill(PID[i], SIGQUIT);
+	    waitpid((pid_t)PID[i], 0, 0);
 	  }
-	  waitpid();
+	  //waitpid();
 	  return 0;
 	  break;
        
