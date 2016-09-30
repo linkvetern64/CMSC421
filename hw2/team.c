@@ -4,6 +4,19 @@
  * It will take 4 names, distribute them among the process names.
  * The children will keep track of each other and keep track of
  * number of signals sent to it.
+ *
+ *
+ * ---- QUESTIONS ----
+ * 1. You could have a signal handler set in team that when
+ *    the user fields the ball, the program enters a loop
+ *    waiting to get a signal back from the child process.
+ * 
+ * 2. When the child process is waiting its in state S
+ *    When SIGUSR2 is sent to 1B the state becomes R
+ * 
+ *    R = Running, 
+ *    S = Sleeping, D = sleeping in uninterruptible wait, 
+ *    Z = Zombie, T = traced or stopped
  */
 #define _POSIX_SOURCE
 #define _POSIX_C_SOURCE 200809L
@@ -46,7 +59,7 @@ int main(int argc, char *argv[]){
     printf("Error too many or too little arguments.  Need exactly 4\n");
     return 0;
   }
-
+  printf("%d THIS PID IS ", getpid());
   //char * players[4];
   char * positions[4];
   positions[0] = "1B";
