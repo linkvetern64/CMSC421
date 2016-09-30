@@ -59,8 +59,6 @@ int main(int argc, char *argv[]){
     printf("Error too many or too little arguments.  Need exactly 4\n");
     return 0;
   }
-  printf("%d THIS PID IS ", getpid());
-  //char * players[4];
   char * positions[4];
   positions[0] = "1B";
   positions[1] = "2B";
@@ -200,7 +198,6 @@ int main(int argc, char *argv[]){
 	    kill(PID[i], SIGQUIT);
 	    waitpid((pid_t)PID[i], 0, 0);
 	  }
-	  //waitpid();
 	  return 0;
 	  break;
        
