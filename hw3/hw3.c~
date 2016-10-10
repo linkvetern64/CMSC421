@@ -1,0 +1,25 @@
+#define _POSIX_SOURCE
+#include <signal.h>
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <time.h>
+#include <stdint.h>
+
+int main(int argc, char *argv[]){
+  if(argc != 2){
+    return 0;
+  }
+
+  FILE *fp;
+
+  fp = fopen("unsafetrack1.data", "r");
+  fprintf(fp, "This is testing for fprintf ... \n");
+  fputs("This is testing for fputs...\n", fp);
+  fclose(fp);
+  
+}
