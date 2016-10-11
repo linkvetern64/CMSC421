@@ -65,16 +65,24 @@ int main(int argc, char *argv[]){
     pch = strtok(coord, " ");
     while(pch != NULL){
       stops[i].x = atoi(pch);
-      stops[i].y = atoi(pch);
       //printf("%d ", atoi(pch));
       pch = strtok(NULL, " ");
     }
- 
+
+
+    /*
+      
+
+     */
     //printf("%s \n", buf);
     //if(fgets(buf, 80, file) != NULL){stops[i].x = atoi(buf);}
     //if(fgets(buf, 80, file) != NULL){stops[i].y = atoi(buf);}
     
     //printf("Station %d at (%d,%d)\n",i, stops[i].x, stops[i].y);
+  }
+   //Test printing bus coords
+  for(int i = 0; i < 8; i++){
+    printf("Stop[%d] at (%d,%d)\n",i,stops[i].x, stops[i].y);
   }
   //TEST IF THERES NO PASSENGERS
   while(fgets(buf, 80, file) != NULL){
@@ -91,11 +99,17 @@ int main(int argc, char *argv[]){
       printf("Created thread %d successfully \n", i);
     }
   }
+
+
+  
   //Need to join threads so 
   for(int j = 0; j < B; j++){
      pthread_join(bus[j], NULL);
      pthread_exit(&bus[j]);
   }
+
+
+ 
   
   return 0;
 }
@@ -116,7 +130,7 @@ int mandist(int x1, int y1, int x2, int y2){
 }
 
 int shortestRoute(){
-  
+  //calculate fastest route to next station
   return 0;
 }
 
