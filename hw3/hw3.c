@@ -59,9 +59,7 @@ int main(int argc, char *argv[]){
   pthread_t bus[B];
   char * pch;
   int coords[2];
-  int buffer[3];
-  const int * stationZ = 0;  
- 
+  int buffer[3]; 
   
   if(argc != 2){
     printf("Need exactly 1 argument. Exiting...\n");
@@ -72,7 +70,7 @@ int main(int argc, char *argv[]){
     exit(0);
   }
 
-  //BEGIN filling data
+  //BEGIN filling data -----------------------------
   file = fopen(argv[1], "r");
   //Sets the runtime and number of busses
   if(fgets(buf, 80, file) != NULL){B = atoi(buf);};
@@ -118,7 +116,7 @@ int main(int argc, char *argv[]){
     stops[buffer[1]].destinations[buffer[2]].destination = buffer[2];
   }
   fclose(file); 
-  //End filling data 
+  //End filling data ----------------------------------
 
     //work mutex
   for(int i = 0; i < 8; i++){
@@ -141,8 +139,6 @@ int main(int argc, char *argv[]){
     }
   }
 
-
-  
   //  END OF PROGRAM HERE
   int timer = 0;
   while(timer != T){
