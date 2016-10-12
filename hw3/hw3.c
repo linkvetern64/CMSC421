@@ -120,6 +120,15 @@ int main(int argc, char *argv[]){
   fclose(file); 
   //End filling data 
 
+    //work mutex
+  for(int i = 0; i < 8; i++){
+    for(int j = 0; j < 8; j++){
+      if(pthread_mutex_init(&stops[i].destinations[j].lock, NULL) == 0){
+	//printf("init success\n");
+      }
+    }
+  }
+  
   printStops();
   int * threadN;
   for(int i = 0; i < B; i++){
@@ -132,15 +141,7 @@ int main(int argc, char *argv[]){
     }
   }
 
-  //work mutex
-  for(int i = 0; i < 8; i++){
-    for(int j = 0; j < 8; j++){
-      if(pthread_mutex_init(&stops[i].destinations[j].lock, NULL) == 0){
-	//printf("init success\n");
-      }
-    }
-  }
-  //TEST
+
   
   //  END OF PROGRAM HERE
   int timer = 0;
@@ -181,12 +182,14 @@ int shortestRoute(){
 
 void *drive(void *ptr){
   int station = ptr;
-  printf("Thread %d\n",ptr);
-  //intf("%d\n", stops[3].destinations[1].numPass);
   for(;;){
+
+    //Determine highest amount of people in station
+    //Pop array.  implement as stack?
     
     if(pthread_mutex_trylock(&stops[5].destinations[6].lock) != 0){
       printf("%d Thread - Failed to get stop\n", station);
+      //Trying another station
     }
     else{
       printf("%d Thread - Successfully got stop\n", station);
@@ -199,8 +202,8 @@ void *drive(void *ptr){
       }
     }
      
-    //usleep(1500000);
     usleep(150000);
+    //usleep(150000);
   }
   return 0;
 }
