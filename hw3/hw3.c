@@ -61,12 +61,8 @@ int main(int argc, char *argv[]){
   int coords[2];
   int buffer[3]; 
   
-  if(argc != 2){
-    printf("Need exactly 1 argument. Exiting...\n");
-    exit(0);
-  }
-  else if(access(argv[1], F_OK) == -1){
-    printf("File does not exist. Exiting...\n");
+  if(argc != 2 || access(argv[1], F_OK) == -1){ 
+    printf("Failure: Needs 1 existing filename as argument. Exiting...\n");
     exit(0);
   }
 
@@ -141,8 +137,6 @@ int main(int argc, char *argv[]){
       //printf("Created thread %d successfully \n", i);
     }
   }
-  printf("%d TEST \n",travel(1,0,0,0) * 1000);
-
 
   //  END OF PROGRAM HERE
   
@@ -165,7 +159,7 @@ int main(int argc, char *argv[]){
  * function - travel :
  * Parameter(s): int x1, y1, x2, y2 : x1, y1 and x2, y2 are coordinates
  * Pre-conditions:  None
- * Post-conditions: Manhattan distance will be returned
+ * Post-conditions: travel time will be returned
  *
  * Description: 
  * This function takes 4 parameters, coordinates that will be used
@@ -173,40 +167,38 @@ int main(int argc, char *argv[]){
  * Manhattan distance = |x1 - x2| + |y1 - y2|
  */
 int travel(int x1, int y1, int x2, int y2){ 
-  //rename travel
   return (abs(x1 - x2) + abs(y1 - y2)) * 250;
 }
 
 int shortestRoute(){
-  //calculate fastest route to next station
+  
   return 0;
 }
 
 void *drive(void *ptr){
-  int station = 0;
+  //int station = 0;
+  int test = (int)ptr;
   for(;;){
 
     //Determine highest amount of people in station
     //Pop array.  implement as stack?
     if(timer >= T){break;}
-    usleep(travel(4,2,1,0) * 1000);
-    if(pthread_mutex_trylock(&stops[5].destinations[6].lock) != 0){
-      //printf("%d Thread - Failed to get stop\n", station);
-      //Trying another station
-    }
-    else{
+    if(stops[test].destinations[test].numPass > 0){//Continue this}
+    if(pthread_mutex_trylock(&stops[test].destinations[test].lock) == 0){
       printf("%d Thread - Successfully got stop\n", ptr);
-      //sleep(2);
-      if(pthread_mutex_unlock(&stops[5].destinations[6].lock) != 0){
-	       //printf("%d Thread - Failed unlocking\n", station);
+      usleep(travel(4,2,1,0) * 1000);
+
+      if(pthread_mutex_unlock(&stops[test].destinations[test].lock) != 0){
+         //printf("%d Thread - Failed unlocking\n", station);
       }
       else{
-	       printf("%d Thread - unlocked stop\n",ptr);
+         printf("%d Thread - unlocked stop\n",ptr);
       }
     }
-     
-    //usleep(150000);
-    //usleep(150000);
+    else{
+      
+      //Loop until you get an unlock terminal
+    }
   }
   return 0;
 }
