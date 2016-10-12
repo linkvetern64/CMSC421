@@ -13,7 +13,7 @@
 #include <pthread.h>
 
 int totalPassengers();
-int mandist(int, int, int, int);
+int travel(int, int, int, int);
 void *drive(void *ptr);
 int totalPass;
 int passArrived;
@@ -40,7 +40,8 @@ struct station stops[8];
 //going to spawn like 100 busses
 int B;
 int T;
-
+int total;
+int timer = 0;
 void printStops();
 
 //2 threads for all locations
@@ -56,7 +57,6 @@ void printStops();
 int main(int argc, char *argv[]){
   FILE *file;
   char buf[80];
-  pthread_t bus[B];
   char * pch;
   int coords[2];
   int buffer[3]; 
@@ -76,6 +76,9 @@ int main(int argc, char *argv[]){
   if(fgets(buf, 80, file) != NULL){B = atoi(buf);};
   if(fgets(buf, 80, file) != NULL){T = atoi(buf);};
   
+  pthread_t bus[B];
+
+
   for(int i = 0; i < 8; i++){
     //Not tokenized.  Needs to be tokenized
     if(fgets(buf, 80, file) == NULL){
@@ -138,9 +141,11 @@ int main(int argc, char *argv[]){
       //printf("Created thread %d successfully \n", i);
     }
   }
+  printf("%d TEST \n",travel(1,0,0,0) * 1000);
+
 
   //  END OF PROGRAM HERE
-  int timer = 0;
+  
   while(timer != T){
     printf("@ time %d\n", timer);
     //printStops();
@@ -149,15 +154,15 @@ int main(int argc, char *argv[]){
   }
   //Need to join threads so 
   for(int j = 0; j < B; j++){
-    pthread_cancel(bus[j]);
     pthread_join(bus[j], NULL);
+    pthread_cancel(bus[j]);
   }
   
   return 0;
 }
 
 /**
- * function - mandist :
+ * function - travel :
  * Parameter(s): int x1, y1, x2, y2 : x1, y1 and x2, y2 are coordinates
  * Pre-conditions:  None
  * Post-conditions: Manhattan distance will be returned
@@ -167,8 +172,9 @@ int main(int argc, char *argv[]){
  * to compute the manhattan distance between bus stations.
  * Manhattan distance = |x1 - x2| + |y1 - y2|
  */
-int mandist(int x1, int y1, int x2, int y2){ 
-  return (abs(x1 - x2) + abs(y1 - y2));
+int travel(int x1, int y1, int x2, int y2){ 
+  //rename travel
+  return (abs(x1 - x2) + abs(y1 - y2)) * 250;
 }
 
 int shortestRoute(){
@@ -177,28 +183,29 @@ int shortestRoute(){
 }
 
 void *drive(void *ptr){
-  int station = ptr;
+  int station = 0;
   for(;;){
 
     //Determine highest amount of people in station
     //Pop array.  implement as stack?
-    
+    if(timer >= T){break;}
+    usleep(travel(4,2,1,0) * 1000);
     if(pthread_mutex_trylock(&stops[5].destinations[6].lock) != 0){
-      printf("%d Thread - Failed to get stop\n", station);
+      //printf("%d Thread - Failed to get stop\n", station);
       //Trying another station
     }
     else{
-      printf("%d Thread - Successfully got stop\n", station);
-      sleep(2);
+      printf("%d Thread - Successfully got stop\n", ptr);
+      //sleep(2);
       if(pthread_mutex_unlock(&stops[5].destinations[6].lock) != 0){
-	printf("%d Thread - Failed unlocking\n", station);
+	       //printf("%d Thread - Failed unlocking\n", station);
       }
       else{
-	printf("%d Thread - unlocked stop\n",station);
+	       printf("%d Thread - unlocked stop\n",ptr);
       }
     }
      
-    usleep(150000);
+    //usleep(150000);
     //usleep(150000);
   }
   return 0;
