@@ -166,7 +166,9 @@ int travel(int x1, int y1, int x2, int y2){
 
 void *drive(void *ptr){
   int station = 0;
+  int destStation = 0;
   int destination = 0;
+  int destation = 0;
   //int test = (int)ptr;
   for(;;){
 
@@ -192,13 +194,9 @@ void *drive(void *ptr){
         }
       }
       else{
-        
+        //printf("%s\n", "failed");
       }
     }
-    if(biggest < 1){
-      //Nothing
-    }
-    /*
     float bestRoute = 0;
     float currBest = 0;
     //Check all other stations for smartest route
@@ -212,18 +210,18 @@ void *drive(void *ptr){
             destStation = i;
             currBest = bestRoute;
             biggest = stops[i].destinations[j].numPass;
-            printf("%f best route\n", bestRoute);
+            //printf("%f best route\n", bestRoute);
           } 
         }
       }
       usleep(travel(stops[station].x, stops[station].y, stops[destination].x, stops[destination].y));
-      station = destation;
-      printf("Best station is %d @ (%d, %d) with %d people. \n", destination, stops[destination].x, stops[destination].y, biggest);
+      station = destStation;
+      //printf("Best station is %d @ (%d, %d) with %d people. \n", destination, stops[destination].x, stops[destination].y, biggest);
     }
     else{
 
-      printf("Biggest at station %d destination %d is %d\n", station, destination, biggest);
-    }*/
+      //printf("Biggest at station %d destination %d is %d\n", station, destination, biggest);
+    }
     //
 
   }  
