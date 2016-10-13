@@ -44,16 +44,9 @@ int totalPassengers = 0;
 int passArrived;
 int timer = 0;
 int delivered = 0;
-//2 threads for all locations
 //Lock station as thread gets there.
 //How to tell if there's a race condition
 //should not be more than max amount of people
-//Do malloc for arrays
-//Multiple stations at same coordinates
-//FREE MALLOC
-// 2 dimensional array, allow coordinates and #stations there
-//Maybe no busses at all
-//Check size of bus array
 int main(int argc, char *argv[]){
   FILE *file;
   char buf[80];
@@ -91,7 +84,7 @@ int main(int argc, char *argv[]){
     }
     
     //Check for out of bounds 
-    if(coords[0] > 9 || coords[0] < 0 || coords[1] < 0 || coords[1] < 0){
+    if(coords[0] > 9 || coords[0] < 0 || coords[1] > 9 || coords[1] < 0){
       printf("Coordinates of stop %d are out of bounds\n", i);
     }
     else{
@@ -173,7 +166,9 @@ int travel(int x1, int y1, int x2, int y2){
 
 void *drive(void *ptr){
   int station = 0;
+  int destStation = 0;
   int destination = 0;
+  int destation = 0;
   //int test = (int)ptr;
   for(;;){
 
@@ -199,13 +194,9 @@ void *drive(void *ptr){
         }
       }
       else{
-
+        //printf("%s\n", "failed");
       }
     }
-    if(biggest < 1){
-      //Nothing
-    }
-    /*
     float bestRoute = 0;
     float currBest = 0;
     //Check all other stations for smartest route
@@ -219,18 +210,18 @@ void *drive(void *ptr){
             destStation = i;
             currBest = bestRoute;
             biggest = stops[i].destinations[j].numPass;
-            printf("%f best route\n", bestRoute);
+            //printf("%f best route\n", bestRoute);
           } 
         }
       }
       usleep(travel(stops[station].x, stops[station].y, stops[destination].x, stops[destination].y));
-      station = destation;
-      printf("Best station is %d @ (%d, %d) with %d people. \n", destination, stops[destination].x, stops[destination].y, biggest);
+      station = destStation;
+      //printf("Best station is %d @ (%d, %d) with %d people. \n", destination, stops[destination].x, stops[destination].y, biggest);
     }
     else{
 
-      printf("Biggest at station %d destination %d is %d\n", station, destination, biggest);
-    }*/
+      //printf("Biggest at station %d destination %d is %d\n", station, destination, biggest);
+    }
     //
 
   }  
@@ -245,7 +236,6 @@ void getTotalPassengers(){
     totalPassengers += sum;
   }
 }
-
 
 void printStops(){
   int total = 0;
