@@ -44,9 +44,16 @@ int totalPassengers = 0;
 int passArrived;
 int timer = 0;
 int delivered = 0;
+//2 threads for all locations
 //Lock station as thread gets there.
 //How to tell if there's a race condition
 //should not be more than max amount of people
+//Do malloc for arrays
+//Multiple stations at same coordinates
+//FREE MALLOC
+// 2 dimensional array, allow coordinates and #stations there
+//Maybe no busses at all
+//Check size of bus array
 int main(int argc, char *argv[]){
   FILE *file;
   char buf[80];
@@ -84,7 +91,7 @@ int main(int argc, char *argv[]){
     }
     
     //Check for out of bounds 
-    if(coords[0] > 9 || coords[0] < 0 || coords[1] > 9 || coords[1] < 0){
+    if(coords[0] > 9 || coords[0] < 0 || coords[1] < 0 || coords[1] < 0){
       printf("Coordinates of stop %d are out of bounds\n", i);
     }
     else{
@@ -192,7 +199,7 @@ void *drive(void *ptr){
         }
       }
       else{
-        
+
       }
     }
     if(biggest < 1){
@@ -238,6 +245,7 @@ void getTotalPassengers(){
     totalPassengers += sum;
   }
 }
+
 
 void printStops(){
   int total = 0;
