@@ -204,7 +204,7 @@ void *drive(void *ptr){
     if(biggest < 1){
       for(int i = 0; i < 8; i++){
         for(int j = 0; j < 8; j++){
-          bestRoute = ((stops[i].destinations[j].numPass * 1000) / travel(stops[station].x, stops[station].y, stops[i].x, stops[i].y));
+          bestRoute = ((stops[i].destinations[j].numPass * 1000) / (1 + travel(stops[station].x, stops[station].y, stops[i].x, stops[i].y)));
           if(stops[i].destinations[j].numPass > biggest && bestRoute > currBest){
             destination = j;
             destStation = i;
