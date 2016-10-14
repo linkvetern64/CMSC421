@@ -19,8 +19,6 @@
  *    its being read / written to.  This would ensure that the value 
  *    is accurate everytime it's accessed.
  *
- * ---------- I AM ATTEMPTING THE EXTRA CREDIT -----------
- *                 PRAISE BE TO RNGESUS
  */
 
 
