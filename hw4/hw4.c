@@ -3,6 +3,7 @@
 #include <signal.h>
 #include <stdio.h>
 #include <string.h>
+#include <math.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/types.h>
@@ -12,6 +13,7 @@
 #include <stdint.h>
 #include <pthread.h>
 #include <stddef.h>
+#define ALIGN(x,a)              __ALIGN_MASK(x,(typeof(x))(a)-1)
 
 /**
  * Unit test of your memory allocator implementation. This will
@@ -80,6 +82,7 @@ char * base;
 char * end;
 char * mid;
 char * curr_pointer;
+char * last_write;
 
 int FRAME_SZ = 64;
 int NUM_FRAMES = 16;
@@ -98,9 +101,15 @@ int free_frame[16];
  */
 int main(int argc, char *argv[]){
 	mem_init();
+	void *m1;
+	float test = 65;
 
-
-
+	test = test / 65;
+	test = ceil(test);
+	printf("%d \n", (int)test);
+	m1 = my_malloc(65);
+	my_malloc_stats();
+	memset(m1, 'D', 20);
 	my_malloc_stats();
 	//ptrdiff_t test;
 	//hw4_test();
@@ -108,7 +117,24 @@ int main(int argc, char *argv[]){
 }
 
 void *my_malloc(size_t size){
-	return base;
+	//int error = 0;
+	long int i = (end - base) / FRAME_SZ;
+	// Find the memory
+	// lock the memory
+	// Write to the memory
+	// Otherwise bail
+	printf("%ld this \n", size);
+	/*while(free_frame[i]){
+
+		i++;
+		error++;
+		if(error > 15){
+			printf("Out of memory\n");
+			exit(0);
+		}
+	}*/
+	printf("Found free frame at %ld\n", i);
+	return &memory[i].frame[0];
 }
 /**
  *
@@ -124,7 +150,7 @@ void mem_init(){
 	base = & memory[0].frame[0];
 	mid = & memory[5].frame[10];
 	end = & memory[12].frame[63];
-	
+	curr_pointer = & memory[0].frame[0];
 	long int frame = (end - base) / FRAME_SZ;
 	printf("Test Base = %ld\n", frame );
 	//memory[0].frame[0] = 'C';
