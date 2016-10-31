@@ -11,6 +11,7 @@
 #include <time.h>
 #include <stdint.h>
 #include <pthread.h>
+#include <stddef.h>
 
 /**
  * Unit test of your memory allocator implementation. This will
@@ -45,37 +46,103 @@ int ascii_in_range(char);
  */
 void my_malloc_stats(void);
 
+/**
+ * Allocate and return a contiguous memory block that is within the
+ * memory region.
+ *
+ * The size of the returned block will be at least @a size bytes,
+ * rounded up to the next 64-byte increment.
+ *
+ * @param size Number of bytes to allocate. If @c 0, your code may do
+ * whatever it wants; my_malloc() of @c 0 is "implementation defined",
+ * meaning it is up to you if you want to return @c NULL, segfault,
+ * whatever.
+ *
+ * @return Pointer to allocated memory, or @c NULL if no space could
+ * be found. If out of memory, set errno to @c ENOMEM.
+ */
+void *my_malloc(size_t size);
 
-int BLOCK_SZ = 64;
-int NUM_PAGE = 16;
+/**
+ * Deallocate a memory region that was returned by my_malloc() or
+ * my_realloc().
+ *
+ * If @a ptr is not a pointer returned by my_malloc() or my_realloc(),
+ * then send a SIGSEGV signal to the calling process. Likewise,
+ * calling my_free() on a previously freed region results in a
+ * SIGSEGV.
+ *
+ * @param ptr Pointer to memory region to free. If @c NULL, do
+ * nothing.
+ */
+//void my_free(void *ptr);
+char * base;
+char * end;
+char * mid;
+char * curr_pointer;
+
+int FRAME_SZ = 64;
+int NUM_FRAMES = 16;
 
 struct page{ 
-	char block[64]; 
-	int free;
+	char frame[64]; 
 };
 
-struct page mem_page[16];
+struct page memory[16];
+int free_frame[16];
 
+/**
+ *
+ * USE PTRDIFF_T
+ *
+ */
 int main(int argc, char *argv[]){
 	mem_init();
+
+
+
 	my_malloc_stats();
+	//ptrdiff_t test;
 	//hw4_test();
   	return 0;
 }
 
+void *my_malloc(size_t size){
+	return base;
+}
+/**
+ *
+ *
+ *
+ */
 void mem_init(){
-	for(int i = 0; i < NUM_PAGE; i++){
-		for(int j = 0; j < BLOCK_SZ; j++){
-			mem_page[i].block[j] = 0;
+	for(int i = 0; i < NUM_FRAMES; i++){
+		for(int j = 0; j < FRAME_SZ; j++){
+			memory[i].frame[j] = 0;
 		}
 	}
+	base = & memory[0].frame[0];
+	mid = & memory[5].frame[10];
+	end = & memory[12].frame[63];
+	
+	long int frame = (end - base) / FRAME_SZ;
+	printf("Test Base = %ld\n", frame );
+	//memory[0].frame[0] = 'C';
+	printf("Test End = %p\n", end);
+	
+	memset(mid, 'B', 14);
 }
 
+/**
+ *
+ *
+ *
+ */
 void my_malloc_stats(){
-	for(int i = 0; i < NUM_PAGE; i++){
-		for(int j = 0; j < BLOCK_SZ; j++){
-			if(ascii_in_range(mem_page[i].block[j])){
-				printf("%c", mem_page[i].block[j]);
+	for(int i = 0; i < NUM_FRAMES; i++){
+		for(int j = 0; j < FRAME_SZ; j++){
+			if(ascii_in_range(memory[i].frame[j])){
+				printf("%c", memory[i].frame[j]);
 			}
 			else{
 				printf(".");
@@ -85,8 +152,8 @@ void my_malloc_stats(){
 	}
 	//Free or reserved
 	printf("Memory allocations:\n");
-	for(int i = 0; i < NUM_PAGE; i++){
-		if(mem_page[i].free){
+	for(int i = 0; i < NUM_FRAMES; i++){
+		if(free_frame[i]){
 			printf("R");
 		}
 		else{
