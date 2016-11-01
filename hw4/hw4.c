@@ -91,8 +91,17 @@ struct page{
 	char frame[64]; 
 };
 
+struct frame{
+	void *address;
+	int limit;
+	int freed;
+	int free;
+};
+
 struct page memory[16];
-int free_frame[16];
+
+struct frame table[16];
+
 
 /**
  *
@@ -102,37 +111,85 @@ int free_frame[16];
 int main(int argc, char *argv[]){
 	mem_init();
 	void *m1;
-	float test = 65;
+	//Make a memory (segment) table !!!!!!!!!!!!!!
+	//Frame table
+	for(int m = 6; m < 15; m++){
+		table[m].free = 0;
+	}
+	table[0].free = 0;
+	table[1].free = 0;
+	table[2].free = 0;
+	//table[6].free = 0;
+	//table[7].free = 0;
+	table[8].free = 0;
+	m1 = my_malloc(200);
+	my_malloc_stats();
 
-	test = test / 65;
-	test = ceil(test);
-	printf("%d \n", (int)test);
-	m1 = my_malloc(65);
-	my_malloc_stats();
-	memset(m1, 'D', 20);
-	my_malloc_stats();
+	//memset(m1, 'D', 20);
+	//my_malloc_stats();
 	//ptrdiff_t test;
 	//hw4_test();
   	return 0;
 }
 
 void *my_malloc(size_t size){
-	//int error = 0;
-	long int i = (end - base) / FRAME_SZ;
-	// Find the memory
-	// lock the memory
-	// Write to the memory
-	// Otherwise bail
-	printf("%ld this \n", size);
-	/*while(free_frame[i]){
+	if(!size) return NULL;
 
-		i++;
-		error++;
+	int frame_alloc = size / 64;
+	if(size % 64) frame_alloc++;
+	printf("Frames to allocate %d\n", frame_alloc);
+	long int i = (curr_pointer - base) / FRAME_SZ;
+	printf("%d current index\n", i);
+	curr_pointer += FRAME_SZ * 9;
+	/*********IMPORTANT**********/
+	//curr point is at 0
+	i = ((curr_pointer - base) / FRAME_SZ) % NUM_FRAMES;
+	//from current pointer find next available blocks
+	//TEST MEM WRAPPING, START CURR POINTER AT 9
+	int loop = 1;
+	int counter = 0;
+	int error = 0;
+	while(loop){
 		if(error > 15){
-			printf("Out of memory\n");
+			printf("Out of Memory\n");
 			exit(0);
 		}
-	}*/
+		i = ((curr_pointer - base) / FRAME_SZ) % NUM_FRAMES;
+		for(int k = 0; k < frame_alloc; k++){
+			if(table[i + k].free){
+				counter++;
+			}
+			else{
+				curr_pointer += FRAME_SZ;
+				break;
+			}
+		}
+		if(counter == frame_alloc){
+			printf("Move to this pointer\n");
+			loop = 0;
+			break;
+		}
+		else{
+			error++;
+			counter = 0;
+		}
+	}
+
+
+	if(table[i].free){
+		printf("Row %d is free\n", i);
+	}
+	else{
+		printf("Row %d is locked\n", i);
+
+	}
+	
+	// Find the memory
+	// lock the memory
+	// 0 out that memory.
+	// Write to the memory
+	// Otherwise bail
+
 	printf("Found free frame at %ld\n", i);
 	return &memory[i].frame[0];
 }
@@ -146,17 +203,18 @@ void mem_init(){
 		for(int j = 0; j < FRAME_SZ; j++){
 			memory[i].frame[j] = 0;
 		}
+		table[i].address = &memory[i].frame[0];
+		table[i].free = 1;
 	}
 	base = & memory[0].frame[0];
-	mid = & memory[5].frame[10];
-	end = & memory[12].frame[63];
+	end = & memory[15].frame[63];
 	curr_pointer = & memory[0].frame[0];
-	long int frame = (end - base) / FRAME_SZ;
-	printf("Test Base = %ld\n", frame );
+	//long int frame = (end - base) / FRAME_SZ;
+	//printf("Test Base = %ld\n", frame );
 	//memory[0].frame[0] = 'C';
-	printf("Test End = %p\n", end);
+	//printf("Test End = %p\n", end);
 	
-	memset(mid, 'B', 14);
+	//memset(mid, 'B', 14);
 }
 
 /**
@@ -179,11 +237,11 @@ void my_malloc_stats(){
 	//Free or reserved
 	printf("Memory allocations:\n");
 	for(int i = 0; i < NUM_FRAMES; i++){
-		if(free_frame[i]){
-			printf("R");
+		if(table[i].free){
+			printf("f");
 		}
 		else{
-			printf("f");
+			printf("R");
 		}
 	}
 	printf("\n");
