@@ -1,0 +1,3 @@
+# This will build the kernel module.
+
+obj-m := minesweeper.o

@@ -1,0 +1,9 @@
+wget http://www.csee.umbc.edu/~jtang/cs421.f16/homework/proj1/minesweeper.c
+
+wget http://www.csee.umbc.edu/~jtang/cs421.f16/homework/proj1/minesweeper-test.c
+
+wget http://www.csee.umbc.edu/~jtang/cs421.f16/homework/proj1/Kbuild
+
+wget http://www.csee.umbc.edu/~jtang/cs421.f16/homework/proj1/Makefile
+
+wget http://www.csee.umbc.edu/~jtang/cs421.f16/homework/proj1/play.sh 
