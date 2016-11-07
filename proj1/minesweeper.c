@@ -31,7 +31,22 @@
 #define BOARD_SIZE (NUM_ROWS * NUM_COLS)
 #define NUM_MINES 10
 
-static const struct file_operations;
+
+static const struct file_operations fop_ms;
+static const struct file_operations fop_ms_ctl;
+static struct miscdevice ms = {
+	MISC_DYNAMIC_MINOR,
+	"ms",
+	&fop_ms,
+	0444
+};
+static struct miscdevice ms_ctl = {
+	MISC_DYNAMIC_MINOR,
+	"ms_ctl",
+	&fop_ms_ctl,
+	0666
+};
+ 
 
 /** true if using a fixed initial game board, false to randomly
     generate it */
@@ -56,6 +71,14 @@ static bool game_over;
  * marked" or "Game Over".
  */
 static char game_status[80];
+
+static void game_reset(void);
+
+static void game_reset(){
+	game_over = false;
+	mines_marked = 0;
+	user_view = '.';
+}
 
 /**
  * ms_read() - callback invoked when a process reads from /dev/ms
@@ -179,9 +202,24 @@ static int __init minesweeper_init(void)
 		pr_err("Could not allocate memory\n");
 		return -ENOMEM;
 	}
-
 	/* YOUR CODE HERE */
+	game_reset();
 
+	struct file_operations fop_ms = {
+		.owner = THIS_MODULE,
+		.read = ms_read,
+		.mmap = ms_mmap
+	};
+
+	struct file_operations fop_ms_ctl = {
+		.owner = THIS_MODULE,
+		.read = ms_ctl_read,
+		.write = ms_ctl_write
+	};
+ 
+	misc_register(&ms);
+	misc_register(&ms_ctl);
+	
 	return 0;
 }
 
@@ -194,6 +232,8 @@ static void __exit minesweeper_exit(void)
 	vfree(user_view);
 
 	/* YOUR CODE HERE */
+	misc_deregister(&ms);
+	misc_deregister(&ms_ctl);
 }
 
 module_init(minesweeper_init);

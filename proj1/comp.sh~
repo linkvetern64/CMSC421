@@ -1,0 +1,2 @@
+gcc --std=c99 -Wall -O2 -o hw4 hw4.c hw4_test.c
+./hw4

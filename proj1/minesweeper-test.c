@@ -10,6 +10,7 @@
 #include <sys/user.h>
 
 int main(void) {
+	printf("%d\n", PAGE_SIZE);
 	printf("Hello, world!\n");
 	return 0;
 }
