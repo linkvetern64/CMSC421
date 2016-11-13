@@ -32,21 +32,6 @@
 #define NUM_MINES 10
 
 
-static const struct file_operations fop_ms;
-static const struct file_operations fop_ms_ctl;
-static struct miscdevice ms = {
-	MISC_DYNAMIC_MINOR,
-	"ms",
-	&fop_ms,
-	0444
-};
-static struct miscdevice ms_ctl = {
-	MISC_DYNAMIC_MINOR,
-	"ms_ctl",
-	&fop_ms_ctl,
-	0666
-};
- 
 
 /** true if using a fixed initial game board, false to randomly
     generate it */
@@ -188,6 +173,31 @@ static ssize_t ms_ctl_write(struct file *filp, const char __user * ubuf,
 	return count;
 }
 
+static const struct file_operations fop_ms = {
+	.owner = THIS_MODULE,
+	.read = ms_read,
+	.mmap = ms_mmap,
+};
+
+static const struct file_operations fop_ms_ctl = {
+	.owner = THIS_MODULE,
+	.read = ms_ctl_read,
+	.write = ms_ctl_write,
+};
+
+static struct miscdevice ms = {
+	.minor = MISC_DYNAMIC_MINOR,
+	.name = "ms",
+	.fops = &fop_ms,
+	.mode = 0444,
+};
+static struct miscdevice ms_ctl = {
+	.minor = MISC_DYNAMIC_MINOR,
+	.name = "ms_ctl",
+	.fops = &fop_ms_ctl,
+	.mode = 0666,
+};
+
 /**
  * minesweeper_init() - entry point into the minesweeper kernel module
  * Return: 0 on successful initialization, negative on error
@@ -203,22 +213,14 @@ static int __init minesweeper_init(void)
 		return -ENOMEM;
 	}
 	/* YOUR CODE HERE */
+
+
 	game_reset();
 
-	struct file_operations fop_ms = {
-		.owner = THIS_MODULE,
-		.read = ms_read,
-		.mmap = ms_mmap
-	};
-
-	struct file_operations fop_ms_ctl = {
-		.owner = THIS_MODULE,
-		.read = ms_ctl_read,
-		.write = ms_ctl_write
-	};
- 
 	misc_register(&ms);
 	misc_register(&ms_ctl);
+
+ 
 	
 	return 0;
 }

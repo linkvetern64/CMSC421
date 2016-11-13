@@ -24,6 +24,8 @@ __attribute__((section("__versions"))) = {
 	{ 0xdf26a863, __VMLINUX_SYMBOL_STR(misc_register) },
 	{ 0xd6ee688f, __VMLINUX_SYMBOL_STR(vmalloc) },
 	{ 0x27e1a049, __VMLINUX_SYMBOL_STR(printk) },
+	{ 0x23b38720, __VMLINUX_SYMBOL_STR(remap_pfn_range) },
+	{ 0x3744cf36, __VMLINUX_SYMBOL_STR(vmalloc_to_pfn) },
 };
 
 static const char __module_depends[]
@@ -32,4 +34,4 @@ __attribute__((section(".modinfo"))) =
 "depends=";
 
 
-MODULE_INFO(srcversion, "F1BC1C51B3F37A76F4A3DC6");
+MODULE_INFO(srcversion, "72EAF69BF3132A0A5F3E09B");
