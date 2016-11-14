@@ -62,7 +62,8 @@ static void game_reset(void);
 static void game_reset(){
 	game_over = false;
 	mines_marked = 0;
-	user_view = '.';
+	/**user_view = '.';*/
+	game_status[0] = 'C';
 }
 
 /**
