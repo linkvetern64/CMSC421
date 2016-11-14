@@ -62,9 +62,8 @@ static void game_reset(void);
 static void game_reset(){
 	game_over = false;
 	mines_marked = 0;
-	/**user_view = '.';*/
-	game_status[0] = 'C';
-}
+	user_view = "ABCDEFG";
+ }
 
 /**
  * ms_read() - callback invoked when a process reads from /dev/ms
@@ -84,7 +83,16 @@ static ssize_t ms_read(struct file *filp, char __user * ubuf,
 		       size_t count, loff_t * ppos)
 {
 	/* YOUR CODE HERE, and update the following 'return' statement */
-	return -EPERM;
+	count = min(count, sizeof(BOARD_SIZE - *ppos));
+	*ppos = *user_view + 100;
+
+	printk("This is the kernel %p \n", *user_view);
+	printk("This is the kernel %s \n", ubuf);
+	printk("This is the kernel %p \n", *ppos);
+	copy_to_user(ubuf, user_view, count);
+	printk("This is the kernel %s \n", ubuf);
+
+	return 0;
 }
 
 /**
