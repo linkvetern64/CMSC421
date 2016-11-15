@@ -60,9 +60,14 @@ static char game_status[80];
 static void game_reset(void);
 
 static void game_reset(){
+	int i = 0;
 	game_over = false;
 	mines_marked = 0;
-	user_view = "ABCDEFG";
+	while(i < PAGE_SIZE){
+		user_view[i] = '.';
+		i++;
+	}
+	
  }
 
 /**
@@ -83,16 +88,24 @@ static ssize_t ms_read(struct file *filp, char __user * ubuf,
 		       size_t count, loff_t * ppos)
 {
 	/* YOUR CODE HERE, and update the following 'return' statement */
-	count = min(count, sizeof(BOARD_SIZE - *ppos));
-	*ppos = *user_view + 100;
-
+	int retval = 0;
+	*ppos = *user_view; 
+	 
 	printk("This is the kernel %p \n", *user_view);
-	printk("This is the kernel %s \n", ubuf);
-	printk("This is the kernel %p \n", *ppos);
-	copy_to_user(ubuf, user_view, count);
-	printk("This is the kernel %s \n", ubuf);
+	
 
-	return 0;
+	count = sizeof(ubuf);
+	count = min(count, sizeof(BOARD_SIZE - *ppos));
+	/*printk("This is the kernel %c \n", user_view[1]);*/
+	/*printk("This is the kernel %p \n", *ppos);*/
+	retval = copy_to_user(ubuf, ppos, count);
+	 
+
+	if(retval <= 0){
+		return 0;
+	}
+	
+	return count;
 }
 
 /**
