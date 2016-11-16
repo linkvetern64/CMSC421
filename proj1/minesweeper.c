@@ -251,12 +251,13 @@ static ssize_t ms_ctl_read(struct file *filp, char __user * ubuf, size_t count,
 static ssize_t ms_ctl_write(struct file *filp, const char __user * ubuf,
 			    size_t count, loff_t * ppos)
 {
-	int x, y, row;
+	int x, y, pos;
 	// PARAM INFO.
 	//ubuf is what takes the users input
 	//count is size of input + 1 ?for null terminator?
 	//ppos && filp are ignored for this.
-
+	//WARNING!!!! -- when the game is ended and picked back up
+	//the board stays the same.
 	//Check if entry is greater than 3, or character not in lowercase range
 	if(count > 4 || !((int)ubuf[0] >= 97 && (int)ubuf[0] <= 122)){
 		return -EINVAL;
@@ -272,12 +273,17 @@ static ssize_t ms_ctl_write(struct file *filp, const char __user * ubuf,
 		case 'r':
 			printk("Reveal (X,Y)\n");
 			/* CODE HERE */
-			x = 1;
-			y = 1;
+			//Check X & Y range and ascii value
+			//check for negatives
+			//check if XY are 0 - 9
+			printk("%d - X\n", (int)ubuf[1]);
+			printk("%d - Y\n", (int)ubuf[2]);
+			x = ubuf[1] - '0';
+			y = ubuf[2] - '0';
 
-			row = 10*y + x;
+			pos = 10 * y + x;
 
-			user_view[row] = '*';
+			user_view[pos] = '*';
 
 			break;
 		case 'm':
