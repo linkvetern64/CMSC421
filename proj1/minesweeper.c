@@ -252,6 +252,7 @@ static ssize_t ms_ctl_write(struct file *filp, const char __user * ubuf,
 			    size_t count, loff_t * ppos)
 {
 	int x, y, pos, mines;
+	char op;
 	// PARAM INFO.
 	//ubuf is what takes the users input
 	//count is size of input + 1 ?for null terminator?
@@ -262,9 +263,15 @@ static ssize_t ms_ctl_write(struct file *filp, const char __user * ubuf,
 	if(count > 4 || !((int)ubuf[0] >= 97 && (int)ubuf[0] <= 122)){
 		return -EINVAL;
 	}
+	op = ubuf[0];
 
+	/* ONCE THE GAME IS OVER SET OP TO NOTHING */
+	/*if(game_over){
+		op = ' ';
+	}*/
 	/* CHECK AGAINST UPPER AND LOWER */
-	switch(ubuf[0]){
+	/* IF !GAME_OVER */
+	switch(op){
 		case 's':
 			printk("Quit and start new\n");
 			game_reset();
@@ -308,12 +315,35 @@ static ssize_t ms_ctl_write(struct file *filp, const char __user * ubuf,
 				/* CHECK CRUST MINES */
 				user_view[pos] = mines + '0';
 			}
-
-			
+			break;
+		case 'y':
+			game_over = true;
 			break;
 		case 'm':
 			printk("Marking (X,Y)\n");
 			/* CODE HERE */
+			x = ubuf[1] - '0';
+			y = ubuf[2] - '0';
+			//Checks if X & Y are non negative and 0 - 9
+			if(!((x > -1 && x < 10) && (y > -1 && y < 10))){
+				return -EINVAL;
+			}
+			
+			//Position = 10 * row position + column #
+			pos = 10 * y + x;
+
+			switch(user_view[pos]){
+				case '.':
+					user_view[pos] = '?';
+					break;
+				case '?':
+					user_view[pos] = '.';
+					break;
+				default:
+					/* Do nothing */
+					break;
+			}
+
 			break;
 		case 'q':
 			printk("Quit game\n");
