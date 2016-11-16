@@ -215,8 +215,25 @@ static int ms_mmap(struct file *filp, struct vm_area_struct *vma)
 static ssize_t ms_ctl_read(struct file *filp, char __user * ubuf, size_t count,
 			   loff_t * ppos)
 {
-	/* YOUR CODE HERE, and update the following 'return' statement */
-	return 0;
+	int len;
+	size_t comp;
+
+	len = 80;
+	
+	if(*ppos != 0){
+		return 0;
+	}
+	//strlength of gamestatus
+	comp = (80 - *ppos);
+	count = min(count, comp);
+
+	if(copy_to_user(ubuf, game_status, count)){
+		return -EINVAL;
+	};
+
+	*ppos = count;
+	
+	return len;
 }
 
 /**
@@ -264,7 +281,9 @@ static ssize_t ms_ctl_write(struct file *filp, const char __user * ubuf,
 		return -EINVAL;
 	}
 	op = ubuf[0];
-
+	//Converts XY to integer value			
+	x = ubuf[1] - '0';
+	y = ubuf[2] - '0';
 	/* ONCE THE GAME IS OVER SET OP TO NOTHING */
 	/*if(game_over){
 		op = ' ';
@@ -279,11 +298,8 @@ static ssize_t ms_ctl_write(struct file *filp, const char __user * ubuf,
 			break;
 		case 'r':
 			printk("Reveal (X,Y)\n");
-			/* CODE HERE */
-			
-			//Converts XY to integer value			
-			x = ubuf[1] - '0';
-			y = ubuf[2] - '0';
+			strncpy(game_status, "Revealing pieces\0", 80);
+
 			//Checks if X & Y are non negative and 0 - 9
 			if(!((x > -1 && x < 10) && (y > -1 && y < 10))){
 				return -EINVAL;
@@ -292,6 +308,9 @@ static ssize_t ms_ctl_write(struct file *filp, const char __user * ubuf,
 			else if(game_board[x][y]){
 				/* GAME FAILS */
 				printk("Hit a mine boiii\n");
+				strncpy(game_status, "Game over\0", 80);
+
+				//game_over = true;
 			}
 			//Position = 10 * row position + column #
 			pos = 10 * y + x;
@@ -309,21 +328,20 @@ static ssize_t ms_ctl_write(struct file *filp, const char __user * ubuf,
 				if(game_board[x+1][y]){mines++;}
 				if(game_board[x+1][y+1]){mines++;}
 				if(game_board[x+1][y-1]){mines++;}
-				user_view[pos] = mines + '0';
+				if(mines > 0){
+					user_view[pos] = mines + '0';
+				}
+				else{
+					user_view[pos] = '-';
+				}
 			}
 			else{
 				/* CHECK CRUST MINES */
 				user_view[pos] = mines + '0';
 			}
 			break;
-		case 'y':
-			game_over = true;
-			break;
 		case 'm':
 			printk("Marking (X,Y)\n");
-			/* CODE HERE */
-			x = ubuf[1] - '0';
-			y = ubuf[2] - '0';
 			//Checks if X & Y are non negative and 0 - 9
 			if(!((x > -1 && x < 10) && (y > -1 && y < 10))){
 				return -EINVAL;
