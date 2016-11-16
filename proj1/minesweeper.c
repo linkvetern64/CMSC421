@@ -273,18 +273,23 @@ static ssize_t ms_ctl_write(struct file *filp, const char __user * ubuf,
 		case 'r':
 			printk("Reveal (X,Y)\n");
 			/* CODE HERE */
-			//Check X & Y range and ascii value
-			//check for negatives
-			//check if XY are 0 - 9
-			printk("%d - X\n", (int)ubuf[1]);
-			printk("%d - Y\n", (int)ubuf[2]);
+			
+			//Converts XY to integer value			
 			x = ubuf[1] - '0';
 			y = ubuf[2] - '0';
-
+			//Checks if X & Y are non negative and 0 - 9
+			if(!((x > -1 && x < 10) && (y > -1 && y < 10))){
+				return -EINVAL;
+			}
+			/* CHECK THAT X & Y in correct positions*/
+			else if(game_board[x][y]){
+				/* GAME FAILS */
+				printk("Hit a mine boiii\n");
+			}
+			//Position = 10 * row position + column #
 			pos = 10 * y + x;
- 			//twiddle my clit
-			user_view[pos] = '*';
 
+			user_view[pos] = '*';
 			break;
 		case 'm':
 			printk("Marking (X,Y)\n");
