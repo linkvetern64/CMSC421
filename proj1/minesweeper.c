@@ -105,16 +105,9 @@ static void game_reset(){
 	int i;
 	//unsigned int rand;
 
-	char test;
+	/* TEST LOGIC HERE */
 
-	test = 'C';
-
-	if(test == 'c'){
-		printk("True\n");
-	}
-	else{
-		printk("False\n");
-	}
+	/* TEST LOGIC HERE */
 
 	//Need \0 null terminator denotes string 
 	strncpy(game_status, "Game reset\0", 80);
@@ -258,32 +251,41 @@ static ssize_t ms_ctl_read(struct file *filp, char __user * ubuf, size_t count,
 static ssize_t ms_ctl_write(struct file *filp, const char __user * ubuf,
 			    size_t count, loff_t * ppos)
 {
-	/* YOUR CODE HERE */
-	if(count > 4){
-		return -EINVAL;
-	}
-	switch(ubuf[0]){
-		case 's':
-			printk("Quit and start new\n");
-			break;
-		case 'r':
-			printk("Reveal (X,Y)\n");
-			break;
-		case 'm':
-			printk("Marking (X,Y)\n");
-			break;
-		case 'q':
-			printk("Quit game\n");
-		default:
-			printk("Not a valid entry\n");
-			break;
-	}
+	// PARAM INFO.
 	//ubuf is what takes the users input
 	//count is size of input + 1 ?for null terminator?
 	//ppos && filp are ignored for this.
 
+	//Check if entry is greater than 3, or character not in lowercase range
+	if(count > 4 || !((int)ubuf[0] >= 97 && (int)ubuf[0] <= 122)){
+		return -EINVAL;
+	}
+
+	/* CHECK AGAINST UPPER AND LOWER */
+	switch(ubuf[0]){
+		case 's':
+			printk("Quit and start new\n");
+			/* CODE HERE */
+			break;
+		case 'r':
+			printk("Reveal (X,Y)\n");
+			/* CODE HERE */
+			break;
+		case 'm':
+			printk("Marking (X,Y)\n");
+			/* CODE HERE */
+			break;
+		case 'q':
+			printk("Quit game\n");
+			/* CODE HERE */
+			break;
+		default:
+			printk("Not a valid entry\n");
+			/* CODE HERE */
+			break;
+	}
+
 	/*copy_from_user to get user input, to put from user space to kernel space*/
-	printk("%zd - TEST\n", count);
 	return count;
 }
 
