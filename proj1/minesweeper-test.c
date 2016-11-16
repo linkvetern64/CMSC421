@@ -11,5 +11,18 @@
 
 int main(void) {
 	printf("Hello, world!\n");
+	/*
+	NEed to call MMAp for testing
+	unsigned long size = (unsigned long)(vma->vm_end - vma->vm_start);
+	unsigned long page = vmalloc_to_pfn(user_view);
+	if (size > PAGE_SIZE)
+		return -EIO;
+	vma->vm_pgoff = 0;
+	vma->vm_page_prot = PAGE_READONLY;
+	if (remap_pfn_range(vma, vma->vm_start, page, size, vma->vm_page_prot))
+		return -EAGAIN;
+
+	return 0;
+	*/
 	return 0;
 }

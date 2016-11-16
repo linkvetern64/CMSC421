@@ -35,6 +35,8 @@
 	 *
 
 	 * Multiple users could write to gameboard or CMD line at same time.
+	 
+	 * Spin lock examples in lecture
 	 */
 
 
@@ -99,7 +101,9 @@ static char game_status[80];
 static void game_reset(void);
 
 static void game_reset(){
-	int i = 0;
+	int i;
+	unsigned int rand;
+	i = 0;
 	game_over = false;
 	mines_marked = 0;
 
@@ -107,7 +111,21 @@ static void game_reset(){
 		user_view[i] = '.';
 		i++;
 	}
-	/*user_view[i] = '\0';*/
+
+	fixed_mines = false;
+	if(fixed_mines){
+		for(i = 0; i < 10; i++){
+			game_board[i][i] = true;
+		}
+	}
+	else{
+
+	}
+	/*
+	user_view[0] = 'A';
+	user_view[50] = 'B';
+	user_view[99] = 'Z';
+	*/
  }
 
 /**
@@ -128,21 +146,22 @@ static ssize_t ms_read(struct file *filp, char __user * ubuf,
 		       size_t count, loff_t * ppos)
 {
 	/* YOUR CODE HERE, and update the following 'return' statement */
-	int retval;
-	int pos;
 	int len;
+	size_t comp;
+
 	len = 100;
 	
 	if(*ppos != 0){
 		return 0;
 	}
-	
-	count = min(count, (BOARD_SIZE - *ppos));
-	retval = copy_to_user(ubuf, user_view, count);
+
+	comp = (BOARD_SIZE - *ppos);
+	/*sizeof is not good to use*/
+	count = min(count, comp);
+
+	if(copy_to_user(ubuf, user_view, count)){return -EINVAL;};
 
 	*ppos = count;
-	/*printk("This is the kernel %c \n", user_view[1]);*/
-	/*printk("This is the kernel %p \n", *ppos);*/
 	
 	return len;
 }
