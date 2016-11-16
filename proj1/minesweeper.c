@@ -65,6 +65,7 @@
 #include <linux/module.h>
 #include <linux/random.h>
 #include <linux/vmalloc.h>
+#include <linux/string.h>
 #include <asm/uaccess.h>
 
 #define NUM_ROWS 10
@@ -102,31 +103,28 @@ static void game_reset(void);
 
 static void game_reset(){
 	int i;
-	unsigned int rand;
+	//unsigned int rand;
+
+	//Need \0 null terminator denotes string 
+	strncpy(game_status, "Game reset\0", 80);
+	
 	i = 0;
 	game_over = false;
 	mines_marked = 0;
 
-	while(i < PAGE_SIZE){
-		user_view[i] = '.';
-		i++;
-	}
+	//Fill user_view with . up to 4096 or PAGE_SIZE
+	while(i < PAGE_SIZE){ user_view[i++] = '.'; }
 
-	fixed_mines = false;
+	fixed_mines = true;
 	if(fixed_mines){
 		for(i = 0; i < 10; i++){
 			game_board[i][i] = true;
 		}
 	}
 	else{
-
-	}
-	/*
-	user_view[0] = 'A';
-	user_view[50] = 'B';
-	user_view[99] = 'Z';
-	*/
- }
+		//implement later
+	}	
+}
 
 /**
  * ms_read() - callback invoked when a process reads from /dev/ms
@@ -145,7 +143,6 @@ static void game_reset(){
 static ssize_t ms_read(struct file *filp, char __user * ubuf,
 		       size_t count, loff_t * ppos)
 {
-	/* YOUR CODE HERE, and update the following 'return' statement */
 	int len;
 	size_t comp;
 
@@ -156,10 +153,11 @@ static ssize_t ms_read(struct file *filp, char __user * ubuf,
 	}
 
 	comp = (BOARD_SIZE - *ppos);
-	/*sizeof is not good to use*/
 	count = min(count, comp);
 
-	if(copy_to_user(ubuf, user_view, count)){return -EINVAL;};
+	if(copy_to_user(ubuf, user_view, count)){
+		return -EINVAL;
+	};
 
 	*ppos = count;
 	

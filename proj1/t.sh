@@ -1,3 +1,3 @@
 ./load.sh
-cat /dev/ms
+#cat /dev/ms
 dmesg | tail
