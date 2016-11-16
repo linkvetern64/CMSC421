@@ -26,7 +26,6 @@ __attribute__((section("__versions"))) = {
 	{ 0x662fa11f, __VMLINUX_SYMBOL_STR(remap_pfn_range) },
 	{ 0x3744cf36, __VMLINUX_SYMBOL_STR(vmalloc_to_pfn) },
 	{ 0x4f8b5ddb, __VMLINUX_SYMBOL_STR(_copy_to_user) },
-	{ 0x9166fada, __VMLINUX_SYMBOL_STR(strncpy) },
 	{ 0x27e1a049, __VMLINUX_SYMBOL_STR(printk) },
 	{ 0xbdfb6dbb, __VMLINUX_SYMBOL_STR(__fentry__) },
 };
@@ -37,4 +36,4 @@ __attribute__((section(".modinfo"))) =
 "depends=";
 
 
-MODULE_INFO(srcversion, "7AD0EC7567DA09A96DFD981");
+MODULE_INFO(srcversion, "DA175220E55CA9585EE4A6B");

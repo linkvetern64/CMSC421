@@ -99,15 +99,28 @@ static bool game_over;
  */
 static char game_status[80];
 
+
+static void game_reveal_mines(void);
+
 static void game_reset(void);
+
+/*FIX DIS*/
+static void game_reveal_mines(){
+	int x, y, pos;
+	for(y = 0; y < 10; y++){
+		for(x = 0; x < 10; x++){
+			pos = 10 * y + x;
+			if(game_board[x][y]){
+				user_view[pos] = '*';
+			}
+		}
+	}
+}
+
 
 static void game_reset(){
 	int i;
 	//unsigned int rand;
-
-	/* TEST LOGIC HERE */
-
-	/* TEST LOGIC HERE */
 
 	//Need \0 null terminator denotes string 
 	strncpy(game_status, "Game reset\0", 80);
@@ -127,6 +140,11 @@ static void game_reset(){
 	}
 	else{
 		//implement later
+		game_board[0][0] = true;
+		game_board[1][3] = true;
+		game_board[3][5] = true;
+		game_board[7][9] = true;
+		game_board[8][0] = true;
 	}	
 }
 
@@ -297,6 +315,7 @@ static ssize_t ms_ctl_write(struct file *filp, const char __user * ubuf,
 			/* CODE HERE */
 			break;
 		case 'r':
+			if(game_over){return count;}
 			printk("Reveal (X,Y)\n");
 			strncpy(game_status, "Revealing pieces\0", 80);
 
@@ -310,7 +329,7 @@ static ssize_t ms_ctl_write(struct file *filp, const char __user * ubuf,
 				printk("Hit a mine boiii\n");
 				strncpy(game_status, "Game over\0", 80);
 
-				//game_over = true;
+				game_over = true;
 			}
 			//Position = 10 * row position + column #
 			pos = 10 * y + x;
@@ -341,6 +360,8 @@ static ssize_t ms_ctl_write(struct file *filp, const char __user * ubuf,
 			}
 			break;
 		case 'm':
+			if(game_over){return count;}
+
 			printk("Marking (X,Y)\n");
 			//Checks if X & Y are non negative and 0 - 9
 			if(!((x > -1 && x < 10) && (y > -1 && y < 10))){
@@ -366,6 +387,7 @@ static ssize_t ms_ctl_write(struct file *filp, const char __user * ubuf,
 		case 'q':
 			printk("Quit game\n");
 			/* CODE HERE */
+			game_reveal_mines();
 			break;
 		default:
 			printk("Not a valid entry\n");
