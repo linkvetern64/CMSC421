@@ -251,6 +251,7 @@ static ssize_t ms_ctl_read(struct file *filp, char __user * ubuf, size_t count,
 static ssize_t ms_ctl_write(struct file *filp, const char __user * ubuf,
 			    size_t count, loff_t * ppos)
 {
+	int x, y, row;
 	// PARAM INFO.
 	//ubuf is what takes the users input
 	//count is size of input + 1 ?for null terminator?
@@ -265,11 +266,19 @@ static ssize_t ms_ctl_write(struct file *filp, const char __user * ubuf,
 	switch(ubuf[0]){
 		case 's':
 			printk("Quit and start new\n");
+			game_reset();
 			/* CODE HERE */
 			break;
 		case 'r':
 			printk("Reveal (X,Y)\n");
 			/* CODE HERE */
+			x = 1;
+			y = 1;
+
+			row = 10*y + x;
+
+			user_view[row] = '*';
+
 			break;
 		case 'm':
 			printk("Marking (X,Y)\n");
