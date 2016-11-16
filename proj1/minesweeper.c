@@ -282,7 +282,7 @@ static ssize_t ms_ctl_write(struct file *filp, const char __user * ubuf,
 			y = ubuf[2] - '0';
 
 			pos = 10 * y + x;
-
+ 			//twiddle my clit
 			user_view[pos] = '*';
 
 			break;
