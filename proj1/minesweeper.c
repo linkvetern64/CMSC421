@@ -1,4 +1,43 @@
 /* YOUR FILE-HEADER COMMENT HERE */
+/*
+	 * unsigned vs signed : read and write ret valu is 
+	 * ssize_t signed size_t, represent # of bytes in an allocation
+	 * %z modifier prints size_t. %zd. 
+	 * 
+	 * subtraction underflow, is when unsigned variable - unsigned variable, cant be negative.
+	 * the result would be like 981928391823 instead of -5. 
+	 * 
+	 * 
+	 * treat it like a C string. character array.  Char * is a character array.
+	 * a pointer to some number of characters
+	 * can't treat as strings, they're not null terminated.  Cannot use string functions 
+	 * none of them will work and kernel will crash.  They're byte pointers,
+	 * can index into like 
+
+	 * Have to use a MMAP to deal with userspace 
+	 * user_view is a dynamically allocated 4096 bytes. 
+	 * only 1st 100 bytes have meaning.  
+	 * 101 should be '\0'
+	 * how does those 100 bytes get to game board?
+     
+	 * byteoffset equation:
+     * y * #cols + x
+	 * row# * # of elements in column + col # 
+
+ 	 * mmap -> for user_view, 
+	 * ms and ms_ctl are interfaces to test
+	 * you have to memory map it. 
+
+	 * classic mistake: 
+	 * if you are revealing mine at location 0,0,
+	 * how many surrounding squares are there. 
+	 * if you go out of bounds in kernel, kernel crashes.
+	 *
+
+	 * Multiple users could write to gameboard or CMD line at same time.
+	 */
+
+
 
 /*
  * This file uses kernel-doc style comments, which is similar to
@@ -63,11 +102,12 @@ static void game_reset(){
 	int i = 0;
 	game_over = false;
 	mines_marked = 0;
+
 	while(i < PAGE_SIZE){
 		user_view[i] = '.';
 		i++;
 	}
-	
+	/*user_view[i] = '\0';*/
  }
 
 /**
@@ -88,24 +128,23 @@ static ssize_t ms_read(struct file *filp, char __user * ubuf,
 		       size_t count, loff_t * ppos)
 {
 	/* YOUR CODE HERE, and update the following 'return' statement */
-	int retval = 0;
-	*ppos = *user_view; 
-	 
-	printk("This is the kernel %p \n", *user_view);
+	int retval;
+	int pos;
+	int len;
+	len = 100;
 	
-
-	count = sizeof(ubuf);
-	count = min(count, sizeof(BOARD_SIZE - *ppos));
-	/*printk("This is the kernel %c \n", user_view[1]);*/
-	/*printk("This is the kernel %p \n", *ppos);*/
-	retval = copy_to_user(ubuf, ppos, count);
-	 
-
-	if(retval <= 0){
+	if(*ppos != 0){
 		return 0;
 	}
 	
-	return count;
+	count = min(count, (BOARD_SIZE - *ppos));
+	retval = copy_to_user(ubuf, user_view, count);
+
+	*ppos = count;
+	/*printk("This is the kernel %c \n", user_view[1]);*/
+	/*printk("This is the kernel %p \n", *ppos);*/
+	
+	return len;
 }
 
 /**
@@ -192,6 +231,7 @@ static ssize_t ms_ctl_write(struct file *filp, const char __user * ubuf,
 			    size_t count, loff_t * ppos)
 {
 	/* YOUR CODE HERE */
+	/*copy_from_user to get user input, to put from user space to kernel space*/
 	return count;
 }
 
@@ -236,11 +276,11 @@ static int __init minesweeper_init(void)
 	}
 	/* YOUR CODE HERE */
 
+	misc_register(&ms);
+	misc_register(&ms_ctl);
 
 	game_reset();
 
-	misc_register(&ms);
-	misc_register(&ms_ctl);
 
  
 	

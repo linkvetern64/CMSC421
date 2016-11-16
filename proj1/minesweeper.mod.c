@@ -17,16 +17,17 @@ __attribute__((section(".gnu.linkonce.this_module"))) = {
 static const struct modversion_info ____versions[]
 __used
 __attribute__((section("__versions"))) = {
-	{ 0x78902ab7, __VMLINUX_SYMBOL_STR(module_layout) },
-	{ 0x63c0b650, __VMLINUX_SYMBOL_STR(param_ops_bool) },
-	{ 0x266fd8a3, __VMLINUX_SYMBOL_STR(misc_deregister) },
+	{ 0xc6c01fa, __VMLINUX_SYMBOL_STR(module_layout) },
+	{ 0x771e6e31, __VMLINUX_SYMBOL_STR(param_ops_bool) },
+	{ 0x712c3460, __VMLINUX_SYMBOL_STR(misc_deregister) },
 	{ 0x999e8297, __VMLINUX_SYMBOL_STR(vfree) },
-	{ 0xdf26a863, __VMLINUX_SYMBOL_STR(misc_register) },
+	{ 0x11517817, __VMLINUX_SYMBOL_STR(misc_register) },
 	{ 0xd6ee688f, __VMLINUX_SYMBOL_STR(vmalloc) },
-	{ 0xc671e369, __VMLINUX_SYMBOL_STR(_copy_to_user) },
 	{ 0x27e1a049, __VMLINUX_SYMBOL_STR(printk) },
-	{ 0x23b38720, __VMLINUX_SYMBOL_STR(remap_pfn_range) },
+	{ 0x4f8b5ddb, __VMLINUX_SYMBOL_STR(_copy_to_user) },
+	{ 0x662fa11f, __VMLINUX_SYMBOL_STR(remap_pfn_range) },
 	{ 0x3744cf36, __VMLINUX_SYMBOL_STR(vmalloc_to_pfn) },
+	{ 0xbdfb6dbb, __VMLINUX_SYMBOL_STR(__fentry__) },
 };
 
 static const char __module_depends[]
@@ -35,4 +36,4 @@ __attribute__((section(".modinfo"))) =
 "depends=";
 
 
-MODULE_INFO(srcversion, "D450A3E8583872CD5FA8E92");
+MODULE_INFO(srcversion, "7A5385336E8A57EC85ED8FB");
