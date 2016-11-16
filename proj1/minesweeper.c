@@ -251,7 +251,7 @@ static ssize_t ms_ctl_read(struct file *filp, char __user * ubuf, size_t count,
 static ssize_t ms_ctl_write(struct file *filp, const char __user * ubuf,
 			    size_t count, loff_t * ppos)
 {
-	int x, y, pos;
+	int x, y, pos, mines;
 	// PARAM INFO.
 	//ubuf is what takes the users input
 	//count is size of input + 1 ?for null terminator?
@@ -289,7 +289,27 @@ static ssize_t ms_ctl_write(struct file *filp, const char __user * ubuf,
 			//Position = 10 * row position + column #
 			pos = 10 * y + x;
 
-			user_view[pos] = '*';
+			mines = 0;
+			//Inner boundaries X&Y no the outer edge
+			//check wraparound boundaries
+			if((x < 9 && x > 0) && (y > 0 && y < 9)){
+				if(game_board[x][y]){mines++;}
+				if(game_board[x][y+1]){mines++;}
+				if(game_board[x][y-1]){mines++;}
+				if(game_board[x-1][y]){mines++;}
+				if(game_board[x-1][y+1]){mines++;}
+				if(game_board[x-1][y-1]){mines++;}
+				if(game_board[x+1][y]){mines++;}
+				if(game_board[x+1][y+1]){mines++;}
+				if(game_board[x+1][y-1]){mines++;}
+				user_view[pos] = mines + '0';
+			}
+			else{
+				/* CHECK CRUST MINES */
+				user_view[pos] = mines + '0';
+			}
+
+			
 			break;
 		case 'm':
 			printk("Marking (X,Y)\n");
