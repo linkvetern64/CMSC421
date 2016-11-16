@@ -105,6 +105,17 @@ static void game_reset(){
 	int i;
 	//unsigned int rand;
 
+	char test;
+
+	test = 'C';
+
+	if(test == 'C'){
+		printk("True\n");
+	}
+	else{
+		printk("False\n");
+	}
+
 	//Need \0 null terminator denotes string 
 	strncpy(game_status, "Game reset\0", 80);
 	
