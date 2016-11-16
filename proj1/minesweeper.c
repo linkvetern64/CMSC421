@@ -109,7 +109,7 @@ static void game_reset(){
 
 	test = 'C';
 
-	if(test == 'C'){
+	if(test == 'c'){
 		printk("True\n");
 	}
 	else{
@@ -259,7 +259,31 @@ static ssize_t ms_ctl_write(struct file *filp, const char __user * ubuf,
 			    size_t count, loff_t * ppos)
 {
 	/* YOUR CODE HERE */
+	if(count > 4){
+		return -EINVAL;
+	}
+	switch(ubuf[0]){
+		case 's':
+			printk("Quit and start new\n");
+			break;
+		case 'r':
+			printk("Reveal (X,Y)\n");
+			break;
+		case 'm':
+			printk("Marking (X,Y)\n");
+			break;
+		case 'q':
+			printk("Quit game\n");
+		default:
+			printk("Not a valid entry\n");
+			break;
+	}
+	//ubuf is what takes the users input
+	//count is size of input + 1 ?for null terminator?
+	//ppos && filp are ignored for this.
+
 	/*copy_from_user to get user input, to put from user space to kernel space*/
+	printk("%zd - TEST\n", count);
 	return count;
 }
 
