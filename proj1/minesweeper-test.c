@@ -25,5 +25,7 @@ int main(void) {
 	return 0;
 	*/
 	/*CHECK COMMENTS IN MS_CTL_WRITE*/
+	/*test if s is only thing input
+	  So s is only parsed and not sr, or ask professor*/
 	return 0;
 }

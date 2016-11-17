@@ -119,32 +119,46 @@ static void game_reveal_mines(){
 
 
 static void game_reset(){
-	int i;
-	//unsigned int rand;
-
+	int i,k, j, marked, X, Y;
+	char rand[8];
 	//Need \0 null terminator denotes string 
 	strncpy(game_status, "Game reset\0", 80);
-	
+
 	i = 0;
 	game_over = false;
 	mines_marked = 0;
 
+	/* Reset gameboard */
+	for(k = 0; k < 10; k++){
+		for(j = 0; j < 10; j++){
+			game_board[k][j] = false;
+		}
+	}
+
 	//Fill user_view with . up to 4096 or PAGE_SIZE
 	while(i < PAGE_SIZE){ user_view[i++] = '.'; }
 
-	fixed_mines = true;
+	marked = 0;
+	fixed_mines = false;
 	if(fixed_mines){
 		for(i = 0; i < 10; i++){
 			game_board[i][i] = true;
 		}
 	}
 	else{
-		//implement later
-		game_board[0][0] = true;
-		game_board[1][3] = true;
-		game_board[3][5] = true;
-		game_board[7][9] = true;
-		game_board[8][0] = true;
+		for(;;){
+			get_random_bytes(rand, 1);
+			X = abs((int)rand[0]) % 10;	
+			get_random_bytes(rand, 1);
+			Y = abs((int)rand[0]) % 10;	
+			if(!game_board[X][Y]){
+				game_board[X][Y] = true;
+				marked++;
+				if(marked >= 10){
+					break;
+				}
+			}
+		}
 	}	
 }
 
@@ -288,6 +302,8 @@ static ssize_t ms_ctl_write(struct file *filp, const char __user * ubuf,
 {
 	int x, y, pos, mines;
 	char op;
+	printk("sizeof ubuf %d\n", sizeof(ubuf));
+
 	// PARAM INFO.
 	//ubuf is what takes the users input
 	//count is size of input + 1 ?for null terminator?
@@ -338,7 +354,7 @@ static ssize_t ms_ctl_write(struct file *filp, const char __user * ubuf,
 			//Inner boundaries X&Y no the outer edge
 			//check wraparound boundaries
 			if((x < 9 && x > 0) && (y > 0 && y < 9)){
-				if(game_board[x][y]){mines++;}
+				//if(game_board[x][y]){mines++;}
 				if(game_board[x][y+1]){mines++;}
 				if(game_board[x][y-1]){mines++;}
 				if(game_board[x-1][y]){mines++;}
