@@ -87,6 +87,9 @@ static bool game_board[NUM_ROWS][NUM_COLS];
 /** buffer that displays what the player can see */
 static char *user_view;
 
+/** buffer that holds values passed into ms_ctl_write*/
+static char *buf;
+
 /** tracks number of mines that the user has marked */
 static unsigned mines_marked;
 
@@ -305,12 +308,14 @@ static ssize_t ms_ctl_write(struct file *filp, const char __user * ubuf,
 	int x, y, pos, mines, i, j, marked_correctly;
 	char op;
 	spin_lock(&foo_lock);	
+	/*copy_from_user to get user input, to put from user space to kernel space*/
+	//if(copy_from_user(buf, ubuf, count)){
+	//	return -EINVAL;
+	//}
 	// PARAM INFO.
 	//ubuf is what takes the users input
 	//count is size of input + 1 ?for null terminator?
 	//ppos && filp are ignored for this
-	//WARNING!!!! -- when the game is ended and picked back up
-	//the board stays the same.
 	//Check if entry is greater than 3, or character not in lowercase range
 	if(count > 4 || !((int)ubuf[0] >= 97 && (int)ubuf[0] <= 122)){
 		spin_unlock(&foo_lock); 
@@ -453,9 +458,9 @@ static ssize_t ms_ctl_write(struct file *filp, const char __user * ubuf,
 		default:
 			printk("Not a valid entry\n");
 			/* CODE HERE */
+			return -EINVAL;
 			break;
 	}
-	/*copy_from_user to get user input, to put from user space to kernel space*/
 	spin_unlock(&foo_lock); 
 	return count;
 }

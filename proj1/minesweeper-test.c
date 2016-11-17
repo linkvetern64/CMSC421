@@ -27,5 +27,17 @@ int main(void) {
 	/*CHECK COMMENTS IN MS_CTL_WRITE*/
 	/*test if s is only thing input
 	  So s is only parsed and not sr, or ask professor*/
+	/*
+	Need MAP_SHARED in mmap
+	implement echo
+	and implemnt cat to test program
+	check play.sh, echo "$cmd" > /dev/ms_ctl
+	*/
+	/*
+	try
+	cat /dev/ms
+	echo q > /dev/ms
+	cat /dev/ms
+	*/
 	return 0;
 }
