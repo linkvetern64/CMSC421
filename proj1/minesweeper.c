@@ -352,9 +352,8 @@ static ssize_t ms_ctl_write(struct file *filp, const char __user * ubuf,
 			/* CHECK THAT X & Y in correct positions*/
 			else if(game_board[x][y]){
 				/* GAME FAILS */
-				printk("Hit a mine boiii\n");
 				strncpy(game_status, "Game over\0", 80);
-				user_view[pos] = '*';
+				game_reveal_mines();
 				game_over = true;
 			}
 
@@ -440,7 +439,7 @@ static ssize_t ms_ctl_write(struct file *filp, const char __user * ubuf,
 				}
 			}
 			if(marked_correctly == NUM_MINES && mines_marked == NUM_MINES){
-				strncpy(game_status, "Game won!!!!\0", 80);
+				strncpy(game_status, "Game won!!!!   ☺ \0", 80);
 				game_over = true;
 			}
 
