@@ -8,4 +8,3 @@ lsmod | grep minesweeper
 
 dmesg | tail
 
-#sudo rmmod minesweeper

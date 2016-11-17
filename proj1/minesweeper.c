@@ -139,7 +139,7 @@ static void game_reset(){
 	while(i < PAGE_SIZE){ user_view[i++] = '.'; }
 
 	marked = 0;
-	fixed_mines = false;
+	fixed_mines = true;
 	if(fixed_mines){
 		for(i = 0; i < 10; i++){
 			game_board[i][i] = true;
@@ -300,13 +300,13 @@ static ssize_t ms_ctl_read(struct file *filp, char __user * ubuf, size_t count,
 static ssize_t ms_ctl_write(struct file *filp, const char __user * ubuf,
 			    size_t count, loff_t * ppos)
 {
-	int x, y, pos, mines;
+	int x, y, pos, mines, i, j, marked_correctly;
 	char op;
 	
 	// PARAM INFO.
 	//ubuf is what takes the users input
 	//count is size of input + 1 ?for null terminator?
-	//ppos && filp are ignored for this.
+	//ppos && filp are ignored for this
 	//WARNING!!!! -- when the game is ended and picked back up
 	//the board stays the same.
 	//Check if entry is greater than 3, or character not in lowercase range
@@ -354,8 +354,8 @@ static ssize_t ms_ctl_write(struct file *filp, const char __user * ubuf,
 			mines = 0;
 			//Inner boundaries X&Y no the outer edge
 			//check wraparound boundaries
-			if((x < 9 && x > 0) && (y > 0 && y < 9)){
-				//if(game_board[x][y]){mines++;}
+			
+			if(!game_over && (x < 9 && x > 0) && (y > 0 && y < 9)){
 				if(game_board[x][y+1]){mines++;}
 				if(game_board[x][y-1]){mines++;}
 				if(game_board[x-1][y]){mines++;}
@@ -371,11 +371,31 @@ static ssize_t ms_ctl_write(struct file *filp, const char __user * ubuf,
 					user_view[pos] = '-';
 				}
 			}
-			else{
+			else if(!game_over){
 				/* CHECK CRUST MINES */
-				user_view[pos] = mines + '0';
+				mines = 0;
+				/*Check that X and Y are in range of 0 - 9*/
+				if(x < 0 || x > 9 || y < 0 || y > 9){
+					return -EINVAL;
+				}
+
+				if(y + 1 <= 9 && y + 1 >= 0 && game_board[x][y+1]){mines++;}
+				if(y - 1 <= 9 && y - 1 >= 0 && game_board[x][y-1]){mines++;}
+				if(x - 1 <= 9 && x - 1 >= 0 && game_board[x-1][y]){mines++;}
+				if(x - 1 <= 9 && x - 1 >= 0 && y + 1 <= 9 && y + 1 >= 0 && game_board[x-1][y+1]){mines++;}
+				if(x - 1 <= 9 && x - 1 >= 0 && y - 1 <= 9 && y - 1 >= 0 && game_board[x-1][y-1]){mines++;}
+				if(x + 1 <= 9 && x + 1 >= 0 && game_board[x+1][y]){mines++;}
+				if(x + 1 <= 9 && x + 1 >= 0 && y + 1 <= 9 && y + 1 >= 0 && game_board[x+1][y+1]){mines++;}
+				if(x + 1 <= 9 && x + 1 >= 0 && y - 1 <= 9 && y - 1 >= 0 && game_board[x+1][y-1]){mines++;}
+				if(mines > 0){
+					user_view[pos] = mines + '0';
+				}
+				else{
+					user_view[pos] = '-';
+				}
 			}
 			break;
+
 		case 'm':
 			if(game_over){return count;}
 
@@ -384,20 +404,31 @@ static ssize_t ms_ctl_write(struct file *filp, const char __user * ubuf,
 			if(!((x > -1 && x < 10) && (y > -1 && y < 10))){
 				return -EINVAL;
 			}
-			
-			//Position = 10 * row position + column #
-			pos = 10 * y + x;
-
+	
 			switch(user_view[pos]){
 				case '.':
 					user_view[pos] = '?';
+					mines_marked++;
 					break;
 				case '?':
 					user_view[pos] = '.';
+					mines_marked--;
 					break;
 				default:
 					/* Do nothing */
 					break;
+			}
+			marked_correctly = 0;
+			for(i = 0; i < 10; i++){
+				for(j = 0; j < 10; j++){
+					pos = 10 * i + j;
+					if(game_board[i][j] && user_view[pos] == '?'){
+						marked_correctly++;
+					}
+				}
+			}
+			if(marked_correctly == NUM_MINES && mines_marked == NUM_MINES){
+				strncpy(game_status, "Game won!!!!\0", 80);
 			}
 
 			break;
@@ -406,12 +437,18 @@ static ssize_t ms_ctl_write(struct file *filp, const char __user * ubuf,
 			/* CODE HERE */
 			game_reveal_mines();
 			break;
+		case 't':
+			game_reveal_mines();
+			break;
 		default:
 			printk("Not a valid entry\n");
 			/* CODE HERE */
 			break;
 	}
-
+	if(game_over){
+		pr_info("Test finish = %d", 1);
+		game_reveal_mines();
+	}
 	/*copy_from_user to get user input, to put from user space to kernel space*/
 	return count;
 }
