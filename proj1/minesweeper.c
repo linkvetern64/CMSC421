@@ -67,13 +67,15 @@
 #include <linux/vmalloc.h>
 #include <linux/string.h>
 #include <asm/uaccess.h>
+#include <linux/spinlock.h>
 
 #define NUM_ROWS 10
 #define NUM_COLS 10
 #define BOARD_SIZE (NUM_ROWS * NUM_COLS)
 #define NUM_MINES 10
 
-
+/*Spinlock to handle critical sections when modifying board*/
+static DEFINE_SPINLOCK(foo_lock); 
 
 /** true if using a fixed initial game board, false to randomly
     generate it */
@@ -299,10 +301,10 @@ static ssize_t ms_ctl_read(struct file *filp, char __user * ubuf, size_t count,
  */
 static ssize_t ms_ctl_write(struct file *filp, const char __user * ubuf,
 			    size_t count, loff_t * ppos)
-{
+{ 
 	int x, y, pos, mines, i, j, marked_correctly;
 	char op;
-	
+	spin_lock(&foo_lock);	
 	// PARAM INFO.
 	//ubuf is what takes the users input
 	//count is size of input + 1 ?for null terminator?
@@ -311,6 +313,7 @@ static ssize_t ms_ctl_write(struct file *filp, const char __user * ubuf,
 	//the board stays the same.
 	//Check if entry is greater than 3, or character not in lowercase range
 	if(count > 4 || !((int)ubuf[0] >= 97 && (int)ubuf[0] <= 122)){
+		spin_unlock(&foo_lock); 
 		return -EINVAL;
 	}
 	op = ubuf[0];
@@ -334,12 +337,16 @@ static ssize_t ms_ctl_write(struct file *filp, const char __user * ubuf,
 			/* CODE HERE */
 			break;
 		case 'r':
-			if(game_over){return count;}
+			if(game_over){
+				spin_unlock(&foo_lock); 
+				return count;
+			}
 			printk("Reveal (X,Y)\n");
 			strncpy(game_status, "Revealing pieces\0", 80);
 
 			//Checks if X & Y are non negative and 0 - 9
 			if(!((x > -1 && x < 10) && (y > -1 && y < 10))){
+				spin_unlock(&foo_lock); 
 				return -EINVAL;
 			}
 			/* CHECK THAT X & Y in correct positions*/
@@ -376,6 +383,7 @@ static ssize_t ms_ctl_write(struct file *filp, const char __user * ubuf,
 				mines = 0;
 				/*Check that X and Y are in range of 0 - 9*/
 				if(x < 0 || x > 9 || y < 0 || y > 9){
+					spin_unlock(&foo_lock); 
 					return -EINVAL;
 				}
 
@@ -397,11 +405,15 @@ static ssize_t ms_ctl_write(struct file *filp, const char __user * ubuf,
 			break;
 
 		case 'm':
-			if(game_over){return count;}
+			if(game_over){
+				spin_unlock(&foo_lock); 
+				return count;
+			}
 
 			printk("Marking (X,Y)\n");
 			//Checks if X & Y are non negative and 0 - 9
 			if(!((x > -1 && x < 10) && (y > -1 && y < 10))){
+				spin_unlock(&foo_lock); 
 				return -EINVAL;
 			}
 	
@@ -429,27 +441,23 @@ static ssize_t ms_ctl_write(struct file *filp, const char __user * ubuf,
 			}
 			if(marked_correctly == NUM_MINES && mines_marked == NUM_MINES){
 				strncpy(game_status, "Game won!!!!\0", 80);
+				game_over = true;
 			}
 
 			break;
 		case 'q':
-			printk("Quit game\n");
-			/* CODE HERE */
+			/* User quits the game */
+			game_over = true;
 			game_reveal_mines();
 			break;
-		case 't':
-			game_reveal_mines();
-			break;
+
 		default:
 			printk("Not a valid entry\n");
 			/* CODE HERE */
 			break;
 	}
-	if(game_over){
-		pr_info("Test finish = %d", 1);
-		game_reveal_mines();
-	}
 	/*copy_from_user to get user input, to put from user space to kernel space*/
+	spin_unlock(&foo_lock); 
 	return count;
 }
 
