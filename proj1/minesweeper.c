@@ -302,8 +302,7 @@ static ssize_t ms_ctl_write(struct file *filp, const char __user * ubuf,
 {
 	int x, y, pos, mines;
 	char op;
-	printk("sizeof ubuf %d\n", sizeof(ubuf));
-
+	
 	// PARAM INFO.
 	//ubuf is what takes the users input
 	//count is size of input + 1 ?for null terminator?
@@ -318,6 +317,10 @@ static ssize_t ms_ctl_write(struct file *filp, const char __user * ubuf,
 	//Converts XY to integer value			
 	x = ubuf[1] - '0';
 	y = ubuf[2] - '0';
+	
+	//Position = 10 * row position + column #
+	pos = 10 * y + x;
+
 	/* ONCE THE GAME IS OVER SET OP TO NOTHING */
 	/*if(game_over){
 		op = ' ';
@@ -344,11 +347,9 @@ static ssize_t ms_ctl_write(struct file *filp, const char __user * ubuf,
 				/* GAME FAILS */
 				printk("Hit a mine boiii\n");
 				strncpy(game_status, "Game over\0", 80);
-
+				user_view[pos] = '*';
 				game_over = true;
 			}
-			//Position = 10 * row position + column #
-			pos = 10 * y + x;
 
 			mines = 0;
 			//Inner boundaries X&Y no the outer edge
