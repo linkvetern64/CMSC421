@@ -148,7 +148,9 @@ int main(void) {
 
  	/*------------------------------------------------*/
  
+ 	/*Use signal handler to catch signals.???*/
 
+ 	/*------------------------------------------------*/
 
 
  	/* Test concurrency locks */
