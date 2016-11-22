@@ -15,20 +15,31 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/user.h>
-
+#include <string.h>
+#include <stdio.h>
 /* description over function */
 void print_table(void);
 
 /* description over function */
-void rewind(void);
+void rewind_fd(void);
+
+/* function to test threads */
+void *waiting(void *ptr);
+
 
 char * board;
 char status[80];
+#define THREAD_COUNT 1000
 
 int fd_read_ms, fd_read_ms_ctl, fd_write;
 
+/*
+ * Used for testing with fixed_mines
+ */
 int main(void) {
-
+	pthread_t players[THREAD_COUNT];
+	unsigned test_passed = 0;
+	unsigned test_failed = 0;
 	//init section
 	fd_read_ms = open("/dev/ms", O_RDONLY);
 	fd_read_ms_ctl = open("/dev/ms_ctl", O_RDONLY);
@@ -41,23 +52,81 @@ int main(void) {
 	//mmap section
 	board = mmap(NULL, PAGE_SIZE, PROT_READ, MAP_SHARED, fd_read_ms, 0);
 	if(board == MAP_FAILED){printf("test failed on %d\n", __LINE__);}
-
-	//Test section
-	if(write(fd_write, "r00" , 3)){}
+ 	 
+	printf("Test 1: Status Correctly Displayed\n");
+	/* Test for game reset status */
+	if(write(fd_write, "s\n" , 3)){/*Expected write to work*/}
 	if(read(fd_read_ms_ctl, status, sizeof(status)) <= 0){
 		printf("Failure to read on %d\n", __LINE__);
 	}
- 	print_table();
- 	if(!strcmp(status, "Revealing pieces")){printf("Correct!\n");}
+ 	if(!strcmp(status, "Game reset")){test_passed++;}
+ 	else{test_failed++;}
+ 	rewind_fd();
 
- 	rewind();
-	 
-	if(write(fd_write, "s" , 3)){}
+	/* Test for correct markings status */
+	if(write(fd_write, "r10\n" , 3)){/*Expected write to work*/}
 	if(read(fd_read_ms_ctl, status, sizeof(status)) <= 0){
 		printf("Failure to read on %d\n", __LINE__);
 	}
-	print_table();	
+ 	if(!strcmp(status, "0 Marked of 10")){test_passed++;}
+ 	else{test_failed++;}
+ 	rewind_fd();
 
+	/* Test for marked status */
+	if(write(fd_write, "m00\n" , 3)){/*Expected write to work*/}
+	
+	if(read(fd_read_ms_ctl, status, sizeof(status)) <= 0){
+		printf("Failure to read on %d\n", __LINE__);
+	}
+ 	if(!strcmp(status, "1 Marked of 10")){test_passed++;}
+ 	else{test_failed++;}
+ 	rewind_fd();
+
+ 	/* Test for You win! */
+ 	if(write(fd_write, "m11\n" , 3)){/*Expected write to work*/}
+ 	if(write(fd_write, "m22\n" , 3)){/*Expected write to work*/}
+ 	if(write(fd_write, "m33\n" , 3)){/*Expected write to work*/}
+ 	if(write(fd_write, "m44\n" , 3)){/*Expected write to work*/}
+ 	if(write(fd_write, "m55\n" , 3)){/*Expected write to work*/}
+ 	if(write(fd_write, "m66\n" , 3)){/*Expected write to work*/}
+ 	if(write(fd_write, "m77\n" , 3)){/*Expected write to work*/}
+ 	if(write(fd_write, "m88\n" , 3)){/*Expected write to work*/}
+ 	if(write(fd_write, "m99\n" , 3)){/*Expected write to work*/}
+	if(read(fd_read_ms_ctl, status, sizeof(status)) <= 0){
+		printf("Failure to read on %d\n", __LINE__);
+	}
+ 	if(!strcmp(status, "Game won!")){test_passed++;}
+ 	else{test_failed++;}
+ 	rewind_fd();
+
+	/* Test for You lose! status */
+	if(write(fd_write, "s\n" , 3)){/*Expected write to work*/}
+ 	if(write(fd_write, "q\n" , 3)){/*Expected write to work*/}
+	if(read(fd_read_ms_ctl, status, sizeof(status)) <= 0){
+		printf("Failure to read on %d\n", __LINE__);
+	}
+ 	if(!strcmp(status, "You lose!")){test_passed++;}
+ 	else{test_failed++;}
+ 	rewind_fd();
+
+
+
+
+ 	/* Test concurrency locks */
+ 	printf("Test 2: Concurrency Lock Testing\n");
+
+ 	for(int i = 0; i < THREAD_COUNT; i++){
+    if(pthread_create(&players[i], NULL, waiting, (void *)1)){
+      //printf("Failure in creating thread %d\n", i);
+    	}
+  	}
+	  	//Need to join threads so 
+	  for(int j = 0; j < THREAD_COUNT; j++){
+	    pthread_join(players[j], NULL);
+	  }
+
+ 	//Test results
+ 	printf("Tests %d of %d passed.\n", test_passed, (test_passed + test_failed));
 	return 0;
 }
 
@@ -83,9 +152,27 @@ void print_table(){
  * @Desc: This function closes the /dev/ms_ctl 
  * file descriptor and re-opens /dev/ms_ctl.
  */
-void rewind(){
+void rewind_fd(){
  	close(fd_read_ms_ctl);
 	fd_read_ms_ctl = open("/dev/ms_ctl", O_RDONLY);
+}
+
+
+/**
+ * function - waiting :
+ * Parameter(s): void *pt
+ * Pre-conditions:  None
+ * Post-conditions: None
+ *
+ * Description: 
+ * All threads will initialize into waiting.
+ * Once the program is ready to start, the loop will break
+ * and drive() will be called.
+ */
+void *waiting(void *ptr){
+	if(write(fd_write, "m10\n" , 3)){/*Expected write to work*/}
+	printf("1");
+	return 0;
 }
 
 /*

@@ -285,11 +285,13 @@ static ssize_t ms_ctl_write(struct file *filp, const char __user * ubuf,
 	size_t comp;
 	spin_lock(&lock);
 	comp = 8;
-
-	//count = min(count, comp);
+	count = min(count, comp);
+ 	
 	if (copy_from_user(buf, ubuf, count)) {
-		return -EINVAL;
+		spin_unlock(&lock);
+		return count;
 	}
+	
 	//ubuf is what takes the users input
 	//count is size of input + 1 ?for null terminator?
 	//ppos && filp are ignored for this
@@ -302,26 +304,41 @@ static ssize_t ms_ctl_write(struct file *filp, const char __user * ubuf,
 	//Converts XY to integer value                  
 	x = buf[1] - '0';
 	y = buf[2] - '0';
-
+	
 	//Position = 10 * row position + column #
 	pos = 10 * y + x;
-
+	
 	switch (op) {
 	case 's':
+		
+		/* More than 's' was entered */
+		if((int)buf[1] != 10){
+			scnprintf(game_status, 80, "Invalid entry");
+			spin_unlock(&lock);
+			return count;
+		}
+		 
 		game_reset();
 		break;
 
 	case 'r':
+
 		if (game_over) {
 			spin_unlock(&lock);
 			return count;
 		}
-		strncpy(game_status, "Revealing pieces\0", 80);
+		
+		if((int)buf[3] != 10){
+			scnprintf(game_status, 80, "Invalid entry");
+			spin_unlock(&lock);
+			return count;
+		}
 
+		scnprintf(game_status, 80, "%d Marked of 10", mines_marked);
 		//Checks if X & Y are non negative and 0 - 9
 		if (!((x > -1 && x < 10) && (y > -1 && y < 10))) {
 			spin_unlock(&lock);
-			return -EINVAL;
+			return count;
 		}
 
 		/* CHECK THAT X & Y in correct positions */
@@ -329,6 +346,8 @@ static ssize_t ms_ctl_write(struct file *filp, const char __user * ubuf,
 			strncpy(game_status, "You lose!\0", 80);
 			game_reveal_mines();
 			game_over = true;
+			spin_unlock(&lock);
+			return count;
 		}
 
 		mines = 0;
@@ -371,7 +390,7 @@ static ssize_t ms_ctl_write(struct file *filp, const char __user * ubuf,
 			/*Check that X and Y are in range of 0 - 9 */
 			if (x < 0 || x > 9 || y < 0 || y > 9) {
 				spin_unlock(&lock);
-				return -EINVAL;
+				return count;
 			}
 
 			if (y + 1 <= 9 && y + 1 >= 0 && game_board[x][y + 1]) {
@@ -415,10 +434,19 @@ static ssize_t ms_ctl_write(struct file *filp, const char __user * ubuf,
 			spin_unlock(&lock);
 			return count;
 		}
+		if((int)buf[3] != 10){
+			scnprintf(game_status, 80, "Invalid entry");
+			spin_unlock(&lock);
+			return count;
+		}
+		else{
+			printk("%d", buf[3]);
+		}
+
 		//Checks if X & Y are non negative and 0 - 9
 		if (!((x > -1 && x < 10) && (y > -1 && y < 10))) {
 			spin_unlock(&lock);
-			return -EINVAL;
+			return count;
 		}
 
 		switch (user_view[pos]) {
@@ -443,13 +471,21 @@ static ssize_t ms_ctl_write(struct file *filp, const char __user * ubuf,
 				}
 			}
 		}
+		scnprintf(game_status, 80, "%d Marked of 10", mines_marked);
 		if (marked_correctly == NUM_MINES && mines_marked == NUM_MINES) {
-			strncpy(game_status, "Game won! ☺ \0", 80);
+			strncpy(game_status, "Game won!\0", 80);
 			game_over = true;
 		}
 
 		break;
 	case 'q':
+		
+		if((int)buf[1] != 10 && !game_over){
+			scnprintf(game_status, 80, "Invalid entry");
+			spin_unlock(&lock);
+			return count;
+		}
+
 		/* User quits the game */
 		strncpy(game_status, "You lose!\0", 80);
 		game_over = true;
@@ -457,6 +493,11 @@ static ssize_t ms_ctl_write(struct file *filp, const char __user * ubuf,
 		break;
 
 	default:
+		if(game_over){
+			spin_unlock(&lock);
+			return count;
+		}
+		scnprintf(game_status, 80, "Invalid entry");
 		spin_unlock(&lock);
 		return -EINVAL;
 		break;
