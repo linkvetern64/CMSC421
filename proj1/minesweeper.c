@@ -1,44 +1,10 @@
-/* YOUR FILE-HEADER COMMENT HERE */
-/*
-	 * unsigned vs signed : read and write ret valu is 
-	 * ssize_t signed size_t, represent # of bytes in an allocation
-	 * %z modifier prints size_t. %zd. 
-	 * 
-	 * subtraction underflow, is when unsigned variable - unsigned variable, cant be negative.
-	 * the result would be like 981928391823 instead of -5. 
-	 * 
-	 * 
-	 * treat it like a C string. character array.  Char * is a character array.
-	 * a pointer to some number of characters
-	 * can't treat as strings, they're not null terminated.  Cannot use string functions 
-	 * none of them will work and kernel will crash.  They're byte pointers,
-	 * can index into like 
-
-	 * Have to use a MMAP to deal with userspace 
-	 * user_view is a dynamically allocated 4096 bytes. 
-	 * only 1st 100 bytes have meaning.  
-	 * 101 should be '\0'
-	 * how does those 100 bytes get to game board?
-     
-	 * byteoffset equation:
-     * y * #cols + x
-	 * row# * # of elements in column + col # 
-
- 	 * mmap -> for user_view, 
-	 * ms and ms_ctl are interfaces to test
-	 * you have to memory map it. 
-
-	 * classic mistake: 
-	 * if you are revealing mine at location 0,0,
-	 * how many surrounding squares are there. 
-	 * if you go out of bounds in kernel, kernel crashes.
-	 *
-
-	 * Multiple users could write to gameboard or CMD line at same time.
-	 
-	 * Spin lock examples in lecture
-	 */
-
+/**
+ * @Author Joshua Standiford (jstand1@umbc.edu)
+ * @E-mail jstand1@umbc.edu
+ * This file is used to create and insert misc devices into the kernel.
+ * /dev/ms will contain the Minesweeper gameboard and /dev/ms_ctl
+ * handles user input and prints the game status.
+ */
 /*
  * This file uses kernel-doc style comments, which is similar to
  * Javadoc and Doxygen-style comments.  See
@@ -106,7 +72,11 @@ static void game_reveal_mines(void);
 
 static void game_reset(void);
 
-/*FIX DIS*/
+/* @Name: game_reveal_mines
+ * @Return: void
+ * @Desc: this function reveals the mines as asterisks
+ * on the user_view, displayed from /dev/ms
+ */
 static void game_reveal_mines()
 {
 	int x, y, pos;
@@ -120,6 +90,12 @@ static void game_reveal_mines()
 	}
 }
 
+/* @Name: game_reset
+ * @Return: void
+ * @Desc: This function resets the gameboard.
+ * the game_status is reset, game_over is reset
+ * random mines are set unless fixed_mines is true.
+ */
 static void game_reset()
 {
 	int i, k, j, marked, X, Y;
@@ -309,13 +285,11 @@ static ssize_t ms_ctl_write(struct file *filp, const char __user * ubuf,
 	size_t comp;
 	spin_lock(&lock);
 	comp = 8;
-	/*copy_from_user to get user input, to put from user space to kernel space */
-	//count = min(count, comp);
 
+	//count = min(count, comp);
 	if (copy_from_user(buf, ubuf, count)) {
 		return -EINVAL;
 	}
-	// PARAM INFO.
 	//ubuf is what takes the users input
 	//count is size of input + 1 ?for null terminator?
 	//ppos && filp are ignored for this
@@ -336,6 +310,7 @@ static ssize_t ms_ctl_write(struct file *filp, const char __user * ubuf,
 	case 's':
 		game_reset();
 		break;
+
 	case 'r':
 		if (game_over) {
 			spin_unlock(&lock);
@@ -348,18 +323,18 @@ static ssize_t ms_ctl_write(struct file *filp, const char __user * ubuf,
 			spin_unlock(&lock);
 			return -EINVAL;
 		}
+
 		/* CHECK THAT X & Y in correct positions */
 		else if (game_board[x][y]) {
-			/* GAME FAILS */
 			strncpy(game_status, "You lose!\0", 80);
 			game_reveal_mines();
 			game_over = true;
 		}
 
 		mines = 0;
+
 		//Inner boundaries X&Y no the outer edge
 		//check wraparound boundaries
-
 		if (!game_over && (x < 9 && x > 0) && (y > 0 && y < 9)) {
 			if (game_board[x][y + 1]) {
 				mines++;
@@ -391,7 +366,7 @@ static ssize_t ms_ctl_write(struct file *filp, const char __user * ubuf,
 				user_view[pos] = '-';
 			}
 		} else if (!game_over) {
-			/* CHECK CRUST MINES */
+
 			mines = 0;
 			/*Check that X and Y are in range of 0 - 9 */
 			if (x < 0 || x > 9 || y < 0 || y > 9) {
