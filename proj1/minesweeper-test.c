@@ -41,6 +41,11 @@ unsigned test_passed, test_failed;
  */
 int main(void) {
 	pthread_t players[THREAD_COUNT];
+	char stress[PAGE_SIZE];
+	for(int i = 0; i < PAGE_SIZE; i++){
+		stress[i] = 'G';
+	}
+
 	test_passed = 0;
 	test_failed = 0;
 	//init section
@@ -75,7 +80,7 @@ int main(void) {
 
  	printf("\n0 Marked Status Displayed:\n\n");
 	/* Test for correct markings status */
-	if(write(fd_write, "r10\n" , 3)){/*Expected write to work*/}
+	if(write(fd_write, "r10\n" , 4)){/*Expected write to work*/}
 	if(read(fd_read_ms_ctl, status, sizeof(status)) <= 0){
 		printf("Failure to read on %d\n", __LINE__);
 	}
@@ -88,7 +93,7 @@ int main(void) {
  
  	printf("\n1 Marked Status Displayed:\n");
 	/* Test for marked status */
-	if(write(fd_write, "m00\n" , 3)){/*Expected write to work*/}	
+	if(write(fd_write, "m00\n" , 4)){/*Expected write to work*/}	
 	if(read(fd_read_ms_ctl, status, sizeof(status)) <= 0){
 		printf("Failure to read on %d\n", __LINE__);
 	}
@@ -101,15 +106,15 @@ int main(void) {
  
  	printf("\nGame Won Status Displayed:\n");
  	/* Test for You win! */
- 	if(write(fd_write, "m11\n" , 3)){/*Expected write to work*/}
- 	if(write(fd_write, "m22\n" , 3)){/*Expected write to work*/}
- 	if(write(fd_write, "m33\n" , 3)){/*Expected write to work*/}
- 	if(write(fd_write, "m44\n" , 3)){/*Expected write to work*/}
- 	if(write(fd_write, "m55\n" , 3)){/*Expected write to work*/}
- 	if(write(fd_write, "m66\n" , 3)){/*Expected write to work*/}
- 	if(write(fd_write, "m77\n" , 3)){/*Expected write to work*/}
- 	if(write(fd_write, "m88\n" , 3)){/*Expected write to work*/}
- 	if(write(fd_write, "m99\n" , 3)){/*Expected write to work*/}
+ 	if(write(fd_write, "m11\n" , 4)){/*Expected write to work*/}
+ 	if(write(fd_write, "m22\n" , 4)){/*Expected write to work*/}
+ 	if(write(fd_write, "m33\n" , 4)){/*Expected write to work*/}
+ 	if(write(fd_write, "m44\n" , 4)){/*Expected write to work*/}
+ 	if(write(fd_write, "m55\n" , 4)){/*Expected write to work*/}
+ 	if(write(fd_write, "m66\n" , 4)){/*Expected write to work*/}
+ 	if(write(fd_write, "m77\n" , 4)){/*Expected write to work*/}
+ 	if(write(fd_write, "m88\n" , 4)){/*Expected write to work*/}
+ 	if(write(fd_write, "m99\n" , 4)){/*Expected write to work*/}
 	if(read(fd_read_ms_ctl, status, sizeof(status)) <= 0){
 		printf("Failure to read on %d\n", __LINE__);
 	}
@@ -123,7 +128,7 @@ int main(void) {
 	printf("\nGame Over Status Displayed:\n");
  	/* Reveal mine space and game over */
 	if(write(fd_write, "s\n" , 3)){/*Expected write to work*/}
- 	if(write(fd_write, "r00\n" , 3)){/*Expected write to work*/}
+ 	if(write(fd_write, "r00\n" , 4)){/*Expected write to work*/}
 	if(read(fd_read_ms_ctl, status, sizeof(status)) <= 0){
 		printf("Failure to read on %d\n", __LINE__);
 	}
@@ -168,6 +173,25 @@ int main(void) {
 	    pthread_join(players[j], NULL);
 	}
 	print_table();
+
+	printf("Test 3: Edge Cases\n");
+
+
+
+
+	printf("Test 4: Stress Testing\n");
+	//if(write(fd_write, "s\n" , 3)){/*Expected write to work*/}
+ 	if(write(fd_write, stress , PAGE_SIZE)){/*Expected write to work*/}
+	if(read(fd_read_ms_ctl, status, sizeof(status)) <= 0){
+		printf("Failure to read on %d\n", __LINE__);
+	}
+ 	if(!strcmp(status, "You lose!")){test_passed++;}
+ 	else{test_failed++;}
+ 	print_table();
+ 	rewind_fd();
+
+
+
  	//Test results
  	printf("Tests %d of %d passed.\n", test_passed, (test_passed + test_failed));
 	return 0;
