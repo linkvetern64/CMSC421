@@ -30,19 +30,22 @@ int main(void) {
 	if(board == MAP_FAILED){printf("test failed on %d\n", __LINE__);}
 
 	//Test section
-				 
-
-	if(write(fd_write, "s" , 3)){}
- 	print_table();
-
-	if(write(fd_write, "q" , 3)){}
-				
-	if(read(fd_read_ms_ctl, &status, sizeof(status)) <= 0){
+	if(write(fd_write, "r00" , 3)){}
+	if(read(fd_read_ms_ctl, status, sizeof(status)) <= 0){
 		printf("Failure to read on %d\n", __LINE__);
 	}
-	
-	print_table();
-	printf("Status : %s\n", status);
+ 	print_table();
+ 	if(!strcmp(status, "Revealing pieces")){
+ 		printf("Correct!\n");
+ 	}
+ 	close(fd_read_ms_ctl);
+	fd_read_ms_ctl = open("/dev/ms_ctl", O_RDONLY);
+	 
+	if(write(fd_write, "s" , 3)){}
+	if(read(fd_read_ms_ctl, status, sizeof(status)) <= 0){
+		printf("Failure to read on %d\n", __LINE__);
+	}
+	print_table();	
 
 	return 0;
 }
@@ -57,4 +60,5 @@ void print_table(){
 		}
 		printf("\n");
 	}
+	printf("Status : %s\n", status);
 }

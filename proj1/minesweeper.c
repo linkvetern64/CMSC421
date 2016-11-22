@@ -476,6 +476,7 @@ static ssize_t ms_ctl_write(struct file *filp, const char __user * ubuf,
 		break;
 	case 'q':
 		/* User quits the game */
+		strncpy(game_status, "You lose!\0", 80);
 		game_over = true;
 		game_reveal_mines();
 		break;
