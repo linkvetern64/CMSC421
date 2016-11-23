@@ -439,10 +439,7 @@ static ssize_t ms_ctl_write(struct file *filp, const char __user * ubuf,
 			spin_unlock(&lock);
 			return count;
 		}
-		else{
-			printk("%d", buf[3]);
-		}
-
+		
 		//Checks if X & Y are non negative and 0 - 9
 		if (!((x > -1 && x < 10) && (y > -1 && y < 10))) {
 			spin_unlock(&lock);
