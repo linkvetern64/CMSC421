@@ -132,7 +132,8 @@ static irqreturn_t cs421net_bottom(int irq, void *cookie){
 	printk("Test - bottom\n");
 	//Need to clear interrupts
 	packet = cs421net_get_data(&len);
-	
+	//FIX WARNINGS
+	//printk("%s\n", packet);
 	return IRQ_HANDLED;
 }
 
