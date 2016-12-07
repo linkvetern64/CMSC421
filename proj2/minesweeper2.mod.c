@@ -46,4 +46,4 @@ __attribute__((section(".modinfo"))) =
 "depends=xt_cs421net";
 
 
-MODULE_INFO(srcversion, "8D70CE4BD10D64D9204B946");
+MODULE_INFO(srcversion, "C5A0687698FA057997811F3");

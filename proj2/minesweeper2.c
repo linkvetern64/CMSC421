@@ -68,6 +68,9 @@ static char *user_view;
 /** buffer that holds values passed into ms_ctl_write*/
 static char *buf;
 
+
+static char *packet;
+
 /** tracks number of mines that the user has marked */
 static unsigned mines_marked;
 
@@ -123,13 +126,13 @@ static irqreturn_t cs421net_top(int irq, void *cookie){
 static irqreturn_t cs421net_bottom(int irq, void *cookie);
 
 static irqreturn_t cs421net_bottom(int irq, void *cookie){
-	size_t * len;
-	char * packet;
+	size_t * const len;
+	 
 	
 	printk("Test - bottom\n");
 	//Need to clear interrupts
 	packet = cs421net_get_data(&len);
-	 
+	
 	return IRQ_HANDLED;
 }
 
@@ -604,6 +607,7 @@ static int __init minesweeper_init(void)
 		pr_info("Using a fixed minefield.\n");
 	user_view = vmalloc(PAGE_SIZE);
 	buf = vmalloc(PAGE_SIZE);
+	packet = vmalloc(PAGE_SIZE);
 	if (!user_view) {
 		pr_err("Could not allocate memory\n");
 		return -ENOMEM;
@@ -635,6 +639,7 @@ static void __exit minesweeper_exit(void)
 	pr_info("Freeing resources.\n");
 	vfree(user_view);
 	vfree(buf);
+	vfree(packet);
 	/* YOUR CODE HERE */
 	free_irq(CS421NET_IRQ, NULL);
 	misc_deregister(&ms);
