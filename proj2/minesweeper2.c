@@ -50,6 +50,7 @@
 #define NUM_COLS 10
 #define BOARD_SIZE (NUM_ROWS * NUM_COLS)
 #define NUM_MINES 10
+#define CS421NET_IRQ 6
 
 /*Spinlock to handle critical sections when modifying board*/
 static DEFINE_SPINLOCK(lock);
@@ -84,6 +85,53 @@ static char game_status[80];
 static void game_reveal_mines(void);
 
 static void game_reset(void);
+
+/**
+ * cs421net_top() - top-half of network ISR
+ * @irq: IRQ that was invoked
+ * @cookie: Pointer to data that was passed into
+ * request_threaded_irq() (ignored)
+ *
+ * If @irq is %CS421NET_IRQ, then wake up the bottom-half. Otherwise,
+ * return %IRQ_NONE.
+ */
+static irqreturn_t cs421net_top(int irq, void *cookie);
+
+static irqreturn_t cs421net_top(int irq, void *cookie){
+	printk("Test - top : %d\n", irq);
+	if(irq == CS421NET_IRQ){
+		return IRQ_WAKE_THREAD;
+	}
+	return IRQ_NONE;
+}
+
+/**
+ * cs421net_bottom() - bottom-half to network ISR
+ * @irq: IRQ that was invoked (ignored)
+ * @cookie: Pointer that was passed into request_threaded_irq()
+ * (ignored)
+ *
+ * Fetch the incoming packet, via cs421net_get_data(). Treat the data
+ * as if it were user input, as per minesweeper_ctl_write(). Remember
+ * to add appropriate spin lock calls in this function.
+ *
+ * Note that the incoming payload is NOT a string; you can NOT use
+ * strcpy() or strlen() on it.
+ *
+ * Return: always %IRQ_HANDLED
+ */
+static irqreturn_t cs421net_bottom(int irq, void *cookie);
+
+static irqreturn_t cs421net_bottom(int irq, void *cookie){
+	size_t * len;
+	char * packet;
+	
+	printk("Test - bottom\n");
+	//Need to clear interrupts
+	packet = cs421net_get_data(&len);
+	 
+	return IRQ_HANDLED;
+}
 
 /* @Name: game_reveal_mines
  * @Return: void
@@ -542,6 +590,9 @@ static struct miscdevice ms_ctl = {
 	.mode = 0666,
 };
 
+
+
+
 /**
  * minesweeper_init() - entry point into the minesweeper kernel module
  * Return: 0 on successful initialization, negative on error
@@ -558,6 +609,15 @@ static int __init minesweeper_init(void)
 		return -ENOMEM;
 	}
 	/* YOUR CODE HERE */
+	/*L21 is very important for this.*/
+	cs421net_enable();
+	if(request_threaded_irq(CS421NET_IRQ, cs421net_top, cs421net_bottom, 0, "421 HERE TEST" , NULL) == 0){
+		//Worked
+		printk("request IRQ worked successfully\n");
+	}
+	else{
+		printk("request IRQ failed\n");
+	}	
 
 	misc_register(&ms);
 	misc_register(&ms_ctl);
@@ -576,8 +636,10 @@ static void __exit minesweeper_exit(void)
 	vfree(user_view);
 	vfree(buf);
 	/* YOUR CODE HERE */
+	free_irq(CS421NET_IRQ, NULL);
 	misc_deregister(&ms);
 	misc_deregister(&ms_ctl);
+	cs421net_disable();
 }
 
 module_init(minesweeper_init);

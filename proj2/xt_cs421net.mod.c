@@ -17,26 +17,26 @@ __attribute__((section(".gnu.linkonce.this_module"))) = {
 static const struct modversion_info ____versions[]
 __used
 __attribute__((section("__versions"))) = {
-	{ 0xc6c01fa, __VMLINUX_SYMBOL_STR(module_layout) },
-	{ 0xa5dd350f, __VMLINUX_SYMBOL_STR(xt_unregister_target) },
-	{ 0xb4606292, __VMLINUX_SYMBOL_STR(kmalloc_caches) },
+	{ 0x78902ab7, __VMLINUX_SYMBOL_STR(module_layout) },
+	{ 0xea665c97, __VMLINUX_SYMBOL_STR(xt_unregister_target) },
+	{ 0xfb272fc1, __VMLINUX_SYMBOL_STR(kmalloc_caches) },
 	{ 0xd2b09ce5, __VMLINUX_SYMBOL_STR(__kmalloc) },
 	{ 0x43a53735, __VMLINUX_SYMBOL_STR(__alloc_workqueue_key) },
+	{ 0xc70525df, __VMLINUX_SYMBOL_STR(trigger_irq) },
 	{ 0x88bfa7e, __VMLINUX_SYMBOL_STR(cancel_work_sync) },
-	{ 0x8a0b12c6, __VMLINUX_SYMBOL_STR(complete_all) },
-	{ 0x1916e38c, __VMLINUX_SYMBOL_STR(_raw_spin_unlock_irqrestore) },
+	{ 0x8d77aa40, __VMLINUX_SYMBOL_STR(complete_all) },
+	{ 0xa292927d, __VMLINUX_SYMBOL_STR(_raw_spin_unlock_irqrestore) },
 	{ 0x27e1a049, __VMLINUX_SYMBOL_STR(printk) },
-	{ 0x7d96cea3, __VMLINUX_SYMBOL_STR(wait_for_completion_interruptible) },
+	{ 0xb2ff7ddd, __VMLINUX_SYMBOL_STR(wait_for_completion_interruptible) },
 	{ 0x8c03d20c, __VMLINUX_SYMBOL_STR(destroy_workqueue) },
-	{ 0x17dc61a5, __VMLINUX_SYMBOL_STR(xt_register_target) },
-	{ 0xbdfb6dbb, __VMLINUX_SYMBOL_STR(__fentry__) },
-	{ 0xb7afaf64, __VMLINUX_SYMBOL_STR(kmem_cache_alloc_trace) },
-	{ 0x680ec266, __VMLINUX_SYMBOL_STR(_raw_spin_lock_irqsave) },
+	{ 0xe2020b0f, __VMLINUX_SYMBOL_STR(xt_register_target) },
+	{ 0xab954434, __VMLINUX_SYMBOL_STR(kmem_cache_alloc) },
+	{ 0x23bbbca0, __VMLINUX_SYMBOL_STR(_raw_spin_lock_irqsave) },
 	{ 0x37a0cba, __VMLINUX_SYMBOL_STR(kfree) },
 	{ 0x69acdf38, __VMLINUX_SYMBOL_STR(memcpy) },
 	{ 0x2e0d2f7f, __VMLINUX_SYMBOL_STR(queue_work_on) },
-	{ 0xb2d5a552, __VMLINUX_SYMBOL_STR(complete) },
-	{ 0x5d8475e0, __VMLINUX_SYMBOL_STR(completion_done) },
+	{ 0x96ce5809, __VMLINUX_SYMBOL_STR(complete) },
+	{ 0x726b65ad, __VMLINUX_SYMBOL_STR(completion_done) },
 };
 
 static const char __module_depends[]
