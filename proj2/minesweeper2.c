@@ -89,53 +89,7 @@ static void game_reveal_mines(void);
 
 static void game_reset(void);
 
-/**
- * cs421net_top() - top-half of network ISR
- * @irq: IRQ that was invoked
- * @cookie: Pointer to data that was passed into
- * request_threaded_irq() (ignored)
- *
- * If @irq is %CS421NET_IRQ, then wake up the bottom-half. Otherwise,
- * return %IRQ_NONE.
- */
-static irqreturn_t cs421net_top(int irq, void *cookie);
 
-static irqreturn_t cs421net_top(int irq, void *cookie){
-	printk("Test - top : %d\n", irq);
-	if(irq == CS421NET_IRQ){
-		return IRQ_WAKE_THREAD;
-	}
-	return IRQ_NONE;
-}
-
-/**
- * cs421net_bottom() - bottom-half to network ISR
- * @irq: IRQ that was invoked (ignored)
- * @cookie: Pointer that was passed into request_threaded_irq()
- * (ignored)
- *
- * Fetch the incoming packet, via cs421net_get_data(). Treat the data
- * as if it were user input, as per minesweeper_ctl_write(). Remember
- * to add appropriate spin lock calls in this function.
- *
- * Note that the incoming payload is NOT a string; you can NOT use
- * strcpy() or strlen() on it.
- *
- * Return: always %IRQ_HANDLED
- */
-static irqreturn_t cs421net_bottom(int irq, void *cookie);
-
-static irqreturn_t cs421net_bottom(int irq, void *cookie){
-	size_t * const len;
-	 
-	
-	printk("Test - bottom\n");
-	//Need to clear interrupts
-	packet = cs421net_get_data(&len);
-	//FIX WARNINGS
-	//printk("%s\n", packet);
-	return IRQ_HANDLED;
-}
 
 /* @Name: game_reveal_mines
  * @Return: void
@@ -595,7 +549,51 @@ static struct miscdevice ms_ctl = {
 };
 
 
+/**
+ * cs421net_top() - top-half of network ISR
+ * @irq: IRQ that was invoked
+ * @cookie: Pointer to data that was passed into
+ * request_threaded_irq() (ignored)
+ *
+ * If @irq is %CS421NET_IRQ, then wake up the bottom-half. Otherwise,
+ * return %IRQ_NONE.
+ */
+static irqreturn_t cs421net_top(int irq, void *cookie);
 
+static irqreturn_t cs421net_top(int irq, void *cookie){
+ 	if(irq == CS421NET_IRQ){
+		return IRQ_WAKE_THREAD;
+	}
+	return IRQ_NONE;
+}
+
+/**
+ * cs421net_bottom() - bottom-half to network ISR
+ * @irq: IRQ that was invoked (ignored)
+ * @cookie: Pointer that was passed into request_threaded_irq()
+ * (ignored)
+ *
+ * Fetch the incoming packet, via cs421net_get_data(). Treat the data
+ * as if it were user input, as per minesweeper_ctl_write(). Remember
+ * to add appropriate spin lock calls in this function.
+ *
+ * Note that the incoming payload is NOT a string; you can NOT use
+ * strcpy() or strlen() on it.
+ *
+ * Return: always %IRQ_HANDLED
+ */
+static irqreturn_t cs421net_bottom(int irq, void *cookie);
+
+static irqreturn_t cs421net_bottom(int irq, void *cookie){
+	size_t * const len;
+	size_t i;
+ 	//Need to clear interrupts
+	packet = cs421net_get_data(&len);
+	ms_ctl_write(NULL, packet, len, 0);
+	//FIX WARNINGS
+	//printk("%s\n", packet);
+	return IRQ_HANDLED;
+}
 
 /**
  * minesweeper_init() - entry point into the minesweeper kernel module
@@ -608,7 +606,7 @@ static int __init minesweeper_init(void)
 		pr_info("Using a fixed minefield.\n");
 	user_view = vmalloc(PAGE_SIZE);
 	buf = vmalloc(PAGE_SIZE);
-	packet = vmalloc(PAGE_SIZE);
+	//packet = vmalloc(PAGE_SIZE);
 	if (!user_view) {
 		pr_err("Could not allocate memory\n");
 		return -ENOMEM;
@@ -640,7 +638,7 @@ static void __exit minesweeper_exit(void)
 	pr_info("Freeing resources.\n");
 	vfree(user_view);
 	vfree(buf);
-	vfree(packet);
+	//vfree(packet);
 	/* YOUR CODE HERE */
 	free_irq(CS421NET_IRQ, NULL);
 	misc_deregister(&ms);
