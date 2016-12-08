@@ -68,8 +68,9 @@ static char *user_view;
 /** buffer that holds values passed into ms_ctl_write*/
 static char *buf;
 
+static char *tmp;
 
-static char *packet;
+static const char *packet;
 
 /** tracks number of mines that the user has marked */
 static unsigned mines_marked;
@@ -305,12 +306,14 @@ static ssize_t ms_ctl_write(struct file *filp, const char __user * ubuf,
 	spin_lock(&lock);
 	comp = 8;
 	count = min(count, comp);
- 	
-	if (copy_from_user(buf, ubuf, count)) {
+ 	/*if (copy_from_user(buf, ubuf, count)) {
 		spin_unlock(&lock);
 		return count;
-	}
-	
+	}*/
+	buf[0] = ubuf[0];
+	buf[1] = ubuf[1];
+	buf[2] = ubuf[2];
+	buf[3] = ubuf[3];
 	//ubuf is what takes the users input
 	//count is size of input + 1 ?for null terminator?
 	//ppos && filp are ignored for this
@@ -319,7 +322,9 @@ static ssize_t ms_ctl_write(struct file *filp, const char __user * ubuf,
 		spin_unlock(&lock);
 		return count;
 	}
-	op = buf[0];
+	//Data from packets uses ubuf, not buf you fucking mong
+ 	op = buf[0];
+	 
 	//Converts XY to integer value                  
 	x = buf[1] - '0';
 	y = buf[2] - '0';
@@ -329,7 +334,14 @@ static ssize_t ms_ctl_write(struct file *filp, const char __user * ubuf,
 	
 	switch (op) {
 	case 's':
-		
+	/*
+		--- Possibly not working because needs to be cleared everytime
+		code I wrote doesn't adjust for larger than 1 entry.  checks for \n @ position 2 & 4.
+		Otherwise packets work.
+	*/
+
+		printk("Reseting");
+		 
 		/* More than 's' was entered */
 		if((int)buf[1] != 10){
 			scnprintf(game_status, 80, "Invalid entry");
@@ -341,6 +353,7 @@ static ssize_t ms_ctl_write(struct file *filp, const char __user * ubuf,
 		break;
 
 	case 'r':
+		printk("Revealing");
 
 		if (game_over) {
 			spin_unlock(&lock);
@@ -449,6 +462,8 @@ static ssize_t ms_ctl_write(struct file *filp, const char __user * ubuf,
 		break;
 
 	case 'm':
+		printk("Marking");
+
 		if (game_over) {
 			spin_unlock(&lock);
 			return count;
@@ -495,12 +510,14 @@ static ssize_t ms_ctl_write(struct file *filp, const char __user * ubuf,
 
 		break;
 	case 'q':
-		
+		printk("Qutting");
+
 		if((int)buf[1] != 10 && !game_over){
 			scnprintf(game_status, 80, "Invalid entry");
 			spin_unlock(&lock);
 			return count;
 		}
+
 
 		/* User quits the game */
 		strncpy(game_status, "You lose!\0", 80);
@@ -509,6 +526,7 @@ static ssize_t ms_ctl_write(struct file *filp, const char __user * ubuf,
 		break;
 
 	default:
+		printk("Not working\n");
 		if(game_over){
 			spin_unlock(&lock);
 			return count;
@@ -547,7 +565,7 @@ static struct miscdevice ms_ctl = {
 	.fops = &fop_ms_ctl,
 	.mode = 0666,
 };
-
+ 
 
 /**
  * cs421net_top() - top-half of network ISR
@@ -587,13 +605,27 @@ static irqreturn_t cs421net_bottom(int irq, void *cookie);
 static irqreturn_t cs421net_bottom(int irq, void *cookie){
 	size_t * const len;
 	size_t i;
- 	//Need to clear interrupts
+	int counter;
+	int sz;
+	counter = 0;
+   	//Need to clear interrupts
 	packet = cs421net_get_data(&len);
-	ms_ctl_write(NULL, packet, len, 0);
-	//FIX WARNINGS
-	//printk("%s\n", packet);
+	//parse through packet for \n
+	for(i = 0; i < len; i++){
+		if((int)packet[(int)i] != 10 && (int)packet[(int)i] != 13){
+			tmp[counter] = (char)packet[(int)i];
+			printk("%c\n", tmp[counter]);
+			counter++;
+		
+		}
+	}
+	tmp[counter] = '\n';
+	
+ 	ms_ctl_write(NULL, tmp, len, NULL);
+
 	return IRQ_HANDLED;
 }
+
 
 /**
  * minesweeper_init() - entry point into the minesweeper kernel module
@@ -606,6 +638,7 @@ static int __init minesweeper_init(void)
 		pr_info("Using a fixed minefield.\n");
 	user_view = vmalloc(PAGE_SIZE);
 	buf = vmalloc(PAGE_SIZE);
+	tmp = vmalloc(PAGE_SIZE);
 	//packet = vmalloc(PAGE_SIZE);
 	if (!user_view) {
 		pr_err("Could not allocate memory\n");
@@ -638,6 +671,7 @@ static void __exit minesweeper_exit(void)
 	pr_info("Freeing resources.\n");
 	vfree(user_view);
 	vfree(buf);
+	vfree(tmp);
 	//vfree(packet);
 	/* YOUR CODE HERE */
 	free_irq(CS421NET_IRQ, NULL);
