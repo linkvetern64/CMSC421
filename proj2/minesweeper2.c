@@ -603,7 +603,7 @@ static irqreturn_t cs421net_top(int irq, void *cookie){
  * Return: always %IRQ_HANDLED
  */
 static irqreturn_t cs421net_bottom(int irq, void *cookie);
-
+//This stems a lot of warnings
 static irqreturn_t cs421net_bottom(int irq, void *cookie){
 	size_t * const len;
 	size_t i;
