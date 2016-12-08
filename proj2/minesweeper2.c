@@ -300,20 +300,22 @@ static ssize_t ms_ctl_read(struct file *filp, char __user * ubuf, size_t count,
 static ssize_t ms_ctl_write(struct file *filp, const char __user * ubuf,
 			    size_t count, loff_t * ppos)
 {
-	int x, y, pos, mines, i, j, marked_correctly;
+	int x, y, pos, mines, i, j, marked_correctly, l;
 	char op;
 	size_t comp;
 	spin_lock(&lock);
 	comp = 8;
 	count = min(count, comp);
- 	/*if (copy_from_user(buf, ubuf, count)) {
+ 	if (copy_from_user(buf, ubuf, count) && ppos != -3345) {
 		spin_unlock(&lock);
 		return count;
-	}*/
-	buf[0] = ubuf[0];
-	buf[1] = ubuf[1];
-	buf[2] = ubuf[2];
-	buf[3] = ubuf[3];
+	}
+	//-3345 identifier for net code
+	if(ppos == -3345){
+		for(l = 0; l <= count; l++){
+			buf[l] = ubuf[l];
+		}
+	}
 	//ubuf is what takes the users input
 	//count is size of input + 1 ?for null terminator?
 	//ppos && filp are ignored for this
@@ -322,8 +324,7 @@ static ssize_t ms_ctl_write(struct file *filp, const char __user * ubuf,
 		spin_unlock(&lock);
 		return count;
 	}
-	//Data from packets uses ubuf, not buf you fucking mong
- 	op = buf[0];
+  	op = buf[0];
 	 
 	//Converts XY to integer value                  
 	x = buf[1] - '0';
@@ -462,12 +463,13 @@ static ssize_t ms_ctl_write(struct file *filp, const char __user * ubuf,
 		break;
 
 	case 'm':
-		printk("Marking");
+		printk("Marking\n");
 
 		if (game_over) {
 			spin_unlock(&lock);
 			return count;
 		}
+		printk("%d = @ position 3\n",(int)buf[3]);
 		if((int)buf[3] != 10){
 			scnprintf(game_status, 80, "Invalid entry");
 			spin_unlock(&lock);
@@ -621,7 +623,7 @@ static irqreturn_t cs421net_bottom(int irq, void *cookie){
 	}
 	tmp[counter] = '\n';
 	
- 	ms_ctl_write(NULL, tmp, len, NULL);
+ 	ms_ctl_write(NULL, tmp, counter, -3345);
 
 	return IRQ_HANDLED;
 }
