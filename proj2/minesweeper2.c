@@ -81,6 +81,8 @@ static char * admin_board;
 /** buffer that holds values passed into ms_ctl_write*/
 static char *buf;
 
+static char *tmp_stats;
+
 /*If data is sent from network this is true.*/
 static bool net_sig;
 
@@ -104,7 +106,10 @@ static bool game_over;
  */
 static char game_status[80];
 
-/* GLOBAL VARS GO ABOVE */
+static char to_stats[10];
+
+static int right;
+/* GLOBAL VARS GO ABOVE */ 
 
  
 /**
@@ -171,17 +176,37 @@ static LIST_HEAD(mylist);
  */
 static void record_stats(){
 	/*Logic to determine stats here*/
-	struct stats *node;
+	struct stats *node, *pos;
+	int i, len;
+
 	node = kzalloc(sizeof(*node), GFP_KERNEL);
 	if(!node){
 		printk("Error creating node\n");
 	}
 
-	node->mines = 69;
-	node->marked_right = 60;
-	node->marked_wrong = 50;
+	node->mines = NUM_MINES;
+	node->marked_right = right;
+	node->marked_wrong = mines_marked - right;
 
 	list_add_tail(&node->list, &mylist);
+
+	while (i < PAGE_SIZE) {
+		stats_view[i++] = ' ';
+	}
+	len, i = 0;
+
+	tmp_stats[0] = '\0'; 
+	list_for_each_entry(pos, &mylist, list){
+		len += scnprintf(to_stats, 9, "%d %d %d\n", pos->mines, pos->marked_right, pos->marked_wrong);
+		strcat(tmp_stats, to_stats);
+	}
+	//RECORD STATS IS WORKING
+	for(i = 0; i < strlen(tmp_stats); i++){
+		stats_view[i] = tmp_stats[i];
+		printk("%c", stats_view[i]);
+	}
+
+ 	//print_list();
 }
 
 
@@ -288,9 +313,11 @@ static bool check_won(void){
 			}
 		}
 	}
+	right = marked_correctly;
 	scnprintf(game_status, 80, "%d Marked of %d", mines_marked, NUM_MINES);
 	if (marked_correctly == NUM_MINES && mines_marked == NUM_MINES) {
 		strncpy(game_status, "Game won!\0", 80);
+		record_stats();
 		game_over = true;
 	}	
 	return game_over;
@@ -338,8 +365,6 @@ static void game_reset()
 	char rand[8];
 	//Need \0 null terminator denotes string 
 	strncpy(game_status, "Game reset\0", 80);
-	record_stats();
-	record_stats();
 	NUM_MINES = 10;
 	i = 0;
 	game_over = false;
@@ -628,6 +653,7 @@ static ssize_t ms_ctl_write(struct file *filp, const char __user * ubuf,
 		/* CHECK THAT X & Y in correct positions */
 		else if (game_board[x][y]) {
 			strncpy(game_status, "You lose!\0", 80);
+			record_stats();
 			game_reveal_mines();
 			game_over = true;
 			spin_unlock(&lock);
@@ -767,6 +793,7 @@ static ssize_t ms_ctl_write(struct file *filp, const char __user * ubuf,
 
 		/* User quits the game */
 		strncpy(game_status, "You lose!\0", 80);
+		record_stats();
 		game_over = true;
 		game_reveal_mines();
 		break;
@@ -871,6 +898,7 @@ static int __init minesweeper_init(void)
 	tmp = vmalloc(PAGE_SIZE);
 	admin_board = vmalloc(PAGE_SIZE);
 	stats_view = vzalloc(PAGE_SIZE);
+	tmp_stats = vmalloc(PAGE_SIZE);
 	//packet = vmalloc(PAGE_SIZE);
 	
 
@@ -911,6 +939,7 @@ static void __exit minesweeper_exit(void)
 	vfree(tmp);
 	vfree(admin_board);
 	vfree(stats_view);
+	vfree(tmp_stats);
 	//vfree(packet);
 
 	list_for_each_entry_safe(entry, tmpP, &mylist, list){

@@ -16,7 +16,7 @@
 #include <sys/user.h>
 #include <string.h>
 #include <stdio.h>
-#include "cs421net.h"
+//#include "cs421net.h"
 
 
 #define THREAD_COUNT 1000
@@ -31,17 +31,18 @@ void rewind_fd(void);
 void *waiting(void *ptr);
 
 char * board;
+char * ms_stats_list;
 char status[80];
 
 
-int fd_read_ms, fd_read_ms_ctl, fd_write;
+int fd_read_ms, fd_read_ms_ctl, fd_write, fd_read_ms_stats;
 unsigned test_passed, test_failed;
 
 /*
  * Used for testing with fixed_mines
  */
 int main(void) {
-	cs421net_init();
+	//cs421net_init();
 	pthread_t players[THREAD_COUNT];
 	char stress[PAGE_SIZE];
 	for(int i = 0; i < PAGE_SIZE; i++){
@@ -61,6 +62,8 @@ int main(void) {
 
 	//mmap section
 	board = mmap(NULL, PAGE_SIZE, PROT_READ, MAP_SHARED, fd_read_ms, 0);
+
+
 	if(board == MAP_FAILED){printf("test failed on %d\n", __LINE__);}
 
 
