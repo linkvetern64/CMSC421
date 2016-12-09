@@ -849,6 +849,15 @@ deps_/home/joshua/CMSC421/proj2/minesweeper2.o := \
     $(wildcard include/config/cgroup/hugetlb.h) \
     $(wildcard include/config/cgroup/pids.h) \
     $(wildcard include/config/cgroup/debug.h) \
+  include/linux/slab.h \
+    $(wildcard include/config/debug/slab.h) \
+    $(wildcard include/config/failslab.h) \
+    $(wildcard include/config/slab.h) \
+    $(wildcard include/config/slub.h) \
+    $(wildcard include/config/slob.h) \
+  include/linux/kmemleak.h \
+    $(wildcard include/config/debug/kmemleak.h) \
+  include/linux/kasan.h \
 
 /home/joshua/CMSC421/proj2/minesweeper2.o: $(deps_/home/joshua/CMSC421/proj2/minesweeper2.o)
 

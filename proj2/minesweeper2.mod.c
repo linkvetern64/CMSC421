@@ -22,23 +22,27 @@ __attribute__((section("__versions"))) = {
 	{ 0xe7051e03, __VMLINUX_SYMBOL_STR(cs421net_disable) },
 	{ 0x266fd8a3, __VMLINUX_SYMBOL_STR(misc_deregister) },
 	{ 0xf20dabd8, __VMLINUX_SYMBOL_STR(free_irq) },
+	{ 0x37a0cba, __VMLINUX_SYMBOL_STR(kfree) },
 	{ 0x999e8297, __VMLINUX_SYMBOL_STR(vfree) },
 	{ 0xdf26a863, __VMLINUX_SYMBOL_STR(misc_register) },
 	{ 0xd6b8e852, __VMLINUX_SYMBOL_STR(request_threaded_irq) },
 	{ 0xf98f620c, __VMLINUX_SYMBOL_STR(cs421net_enable) },
+	{ 0x40a9b349, __VMLINUX_SYMBOL_STR(vzalloc) },
 	{ 0xd6ee688f, __VMLINUX_SYMBOL_STR(vmalloc) },
-	{ 0x27e1a049, __VMLINUX_SYMBOL_STR(printk) },
 	{ 0xad15acf0, __VMLINUX_SYMBOL_STR(cs421net_get_data) },
 	{ 0xb5419b40, __VMLINUX_SYMBOL_STR(_copy_from_user) },
 	{ 0xdbbee5cd, __VMLINUX_SYMBOL_STR(_raw_spin_lock) },
 	{ 0xdb7305a1, __VMLINUX_SYMBOL_STR(__stack_chk_fail) },
 	{ 0x79aa04a2, __VMLINUX_SYMBOL_STR(get_random_bytes) },
-	{ 0x23b38720, __VMLINUX_SYMBOL_STR(remap_pfn_range) },
-	{ 0x3744cf36, __VMLINUX_SYMBOL_STR(vmalloc_to_pfn) },
+	{ 0x27e1a049, __VMLINUX_SYMBOL_STR(printk) },
+	{ 0xab954434, __VMLINUX_SYMBOL_STR(kmem_cache_alloc) },
+	{ 0xfb272fc1, __VMLINUX_SYMBOL_STR(kmalloc_caches) },
 	{ 0xc671e369, __VMLINUX_SYMBOL_STR(_copy_to_user) },
 	{ 0x6c1988ba, __VMLINUX_SYMBOL_STR(_raw_spin_unlock) },
 	{ 0x4971e093, __VMLINUX_SYMBOL_STR(current_task) },
 	{ 0x4ca9669f, __VMLINUX_SYMBOL_STR(scnprintf) },
+	{ 0x23b38720, __VMLINUX_SYMBOL_STR(remap_pfn_range) },
+	{ 0x3744cf36, __VMLINUX_SYMBOL_STR(vmalloc_to_pfn) },
 };
 
 static const char __module_depends[]
@@ -47,4 +51,4 @@ __attribute__((section(".modinfo"))) =
 "depends=xt_cs421net";
 
 
-MODULE_INFO(srcversion, "5B062620A047B65611196D4");
+MODULE_INFO(srcversion, "47D18999C5FEB974DAFAE44");

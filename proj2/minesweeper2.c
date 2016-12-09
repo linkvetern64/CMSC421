@@ -46,6 +46,10 @@
 #include <linux/spinlock.h>
 #include "xt_cs421net.h"
 #include <linux/sched.h>
+#include <linux/gfp.h>
+#include <linux/list.h>
+#include <linux/slab.h>
+
 
 #define NUM_ROWS 10
 #define NUM_COLS 10
@@ -67,6 +71,9 @@ static bool game_board[NUM_ROWS][NUM_COLS];
 
 /** buffer that displays what the player can see */
 static char *user_view;
+
+/* buffer that displays statistics*/
+static char *stats_view;
 
 /** buffer that holds admin board display*/
 static char * admin_board;
@@ -99,6 +106,7 @@ static char game_status[80];
 
 /* GLOBAL VARS GO ABOVE */
 
+ 
 /**
  * cs421net_top() - top-half of network ISR
  * @irq: IRQ that was invoked
@@ -137,8 +145,59 @@ static bool check_won(void);
 static bool is_authorized(void);
 /**/
 static bool pos_equals_mark(int);
+/**/
+static void record_stats(void);
+/*Test function*/
+static void print_list(void);
 /* PROTOTYPES GO ABOVE */
 
+/* Nodes of linked list */
+struct stats{
+	int mines;
+	int marked_right;
+	int marked_wrong;
+	struct list_head list;
+};
+
+
+struct list_head some_list;
+static LIST_HEAD(mylist); 
+
+
+/* record_stats
+ * desc: This function records specific stats to a linked list
+ * that data is written to ms_stats and is accessible via mmap
+ *
+ */
+static void record_stats(){
+	/*Logic to determine stats here*/
+	struct stats *node;
+	node = kzalloc(sizeof(*node), GFP_KERNEL);
+	if(!node){
+		printk("Error creating node\n");
+	}
+
+	node->mines = 69;
+	node->marked_right = 60;
+	node->marked_wrong = 50;
+
+	list_add_tail(&node->list, &mylist);
+}
+
+
+
+static void print_list(){
+	struct stats *pos;
+	list_for_each_entry(pos, &mylist, list){
+		pr_info("VAL : %d %d %d\n", pos->mines, pos->marked_right, pos->marked_wrong);
+	}
+}
+
+/*
+ *
+ *
+ *
+ */
 static bool pos_equals_mark(int pos){
 	if(user_view[pos] == '?'){
 		mines_marked--;
@@ -279,6 +338,8 @@ static void game_reset()
 	char rand[8];
 	//Need \0 null terminator denotes string 
 	strncpy(game_status, "Game reset\0", 80);
+	record_stats();
+	record_stats();
 	NUM_MINES = 10;
 	i = 0;
 	game_over = false;
@@ -389,6 +450,35 @@ static int ms_mmap(struct file *filp, struct vm_area_struct *vma)
 {
 	unsigned long size = (unsigned long)(vma->vm_end - vma->vm_start);
 	unsigned long page = vmalloc_to_pfn(user_view);
+	if (size > PAGE_SIZE)
+		return -EIO;
+	vma->vm_pgoff = 0;
+	vma->vm_page_prot = PAGE_READONLY;
+	if (remap_pfn_range(vma, vma->vm_start, page, size, vma->vm_page_prot))
+		return -EAGAIN;
+
+	return 0;
+}
+
+/**
+ * ms_stats_mmap() - callback invoked when a process mmap()s to /dev/ms
+ * @filp: process's file object that is mapping to this device (ignored)
+ * @vma: virtual memory allocation object containing mmap() request
+ *
+ * Create a read-only mapping from kernel memory (specifically,
+ * @user_view) into user space.
+ *
+ * Code based upon
+ * <a href="http://bloggar.combitech.se/ldc/2015/01/21/mmap-memory-between-kernel-and-userspace/">http://bloggar.combitech.se/ldc/2015/01/21/mmap-memory-between-kernel-and-userspace/</a>
+ *
+ * You do not need to modify this function.
+ *
+ * Return: 0 on success, negative on error.
+ */
+static int ms_stats_mmap(struct file *filp, struct vm_area_struct *vma)
+{
+	unsigned long size = (unsigned long)(vma->vm_end - vma->vm_start);
+	unsigned long page = vmalloc_to_pfn(stats_view);
 	if (size > PAGE_SIZE)
 		return -EIO;
 	vma->vm_pgoff = 0;
@@ -695,6 +785,7 @@ static ssize_t ms_ctl_write(struct file *filp, const char __user * ubuf,
 	return count;
 }
 
+
 static const struct file_operations fop_ms = {
 	.owner = THIS_MODULE,
 	.read = ms_read,
@@ -706,6 +797,12 @@ static const struct file_operations fop_ms_ctl = {
 	.read = ms_ctl_read,
 	.write = ms_ctl_write,
 };
+
+static const struct file_operations fop_ms_stats = {
+	.owner = THIS_MODULE,
+	.mmap = ms_stats_mmap,
+};
+
 
 static struct miscdevice ms = {
 	.minor = MISC_DYNAMIC_MINOR,
@@ -721,7 +818,12 @@ static struct miscdevice ms_ctl = {
 	.mode = 0666,
 };
  
-
+static struct miscdevice ms_stats = {
+	.minor = MISC_DYNAMIC_MINOR,
+	.name = "ms_stats",
+	.fops = &fop_ms_stats,
+	.mode = 0444,
+};
 
 static irqreturn_t cs421net_top(int irq, void *cookie){
  	if(irq == CS421NET_IRQ){
@@ -768,7 +870,10 @@ static int __init minesweeper_init(void)
 	buf = vmalloc(PAGE_SIZE);
 	tmp = vmalloc(PAGE_SIZE);
 	admin_board = vmalloc(PAGE_SIZE);
+	stats_view = vzalloc(PAGE_SIZE);
 	//packet = vmalloc(PAGE_SIZE);
+	
+
 	if (!user_view) {
 		pr_err("Could not allocate memory\n");
 		return -ENOMEM;
@@ -786,7 +891,7 @@ static int __init minesweeper_init(void)
 
 	misc_register(&ms);
 	misc_register(&ms_ctl);
-
+	misc_register(&ms_stats);
 	game_reset();
 
 	return 0;
@@ -797,16 +902,27 @@ static int __init minesweeper_init(void)
  */
 static void __exit minesweeper_exit(void)
 {
+
+	struct stats *entry, *tmpP;
+
 	pr_info("Freeing resources.\n");
 	vfree(user_view);
 	vfree(buf);
 	vfree(tmp);
 	vfree(admin_board);
+	vfree(stats_view);
 	//vfree(packet);
+
+	list_for_each_entry_safe(entry, tmpP, &mylist, list){
+		kfree(entry);
+	}
+	INIT_LIST_HEAD(&mylist);
+
 	/* YOUR CODE HERE */
 	free_irq(CS421NET_IRQ, NULL);
 	misc_deregister(&ms);
 	misc_deregister(&ms_ctl);
+	misc_deregister(&ms_stats);
 	cs421net_disable();
 }
 
