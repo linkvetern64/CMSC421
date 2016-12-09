@@ -45,15 +45,18 @@
 #include <linux/interrupt.h>
 #include <linux/spinlock.h>
 #include "xt_cs421net.h"
+#include <linux/sched.h>
 
 #define NUM_ROWS 10
 #define NUM_COLS 10
 #define BOARD_SIZE (NUM_ROWS * NUM_COLS)
-#define NUM_MINES 10
 #define CS421NET_IRQ 6
 
 /*Spinlock to handle critical sections when modifying board*/
 static DEFINE_SPINLOCK(lock);
+
+/*defined as 10 by default*/
+static int NUM_MINES;
 
 /** true if using a fixed initial game board, false to randomly
     generate it */
@@ -65,11 +68,16 @@ static bool game_board[NUM_ROWS][NUM_COLS];
 /** buffer that displays what the player can see */
 static char *user_view;
 
+/** buffer that holds admin board display*/
+static char * admin_board;
+
 /** buffer that holds values passed into ms_ctl_write*/
 static char *buf;
 
+/*Holds the temporary board*/
 static char *tmp;
 
+/* Netpacket used for 421 network play*/
 static const char *packet;
 
 /** tracks number of mines that the user has marked */
@@ -86,10 +94,26 @@ static bool game_over;
  */
 static char game_status[80];
 
+/**/
 static void game_reveal_mines(void);
 
+/**/
 static void game_reset(void);
 
+/*
+ * Desc: Checks if the user is a root or not.
+ * Returns true if the user is root, otherwise returns false
+ */
+static bool is_authorized(void);
+
+/* @Name: is_authorized
+ * @Return: bool
+ * @Desc: Checks if the user is a root or not.
+ * Returns true if the user is root, otherwise returns false
+ */
+static bool is_authorized(){
+	return current_uid().val == 0;
+}
 
 
 /* @Name: game_reveal_mines
@@ -122,11 +146,11 @@ static void game_reset()
 	char rand[8];
 	//Need \0 null terminator denotes string 
 	strncpy(game_status, "Game reset\0", 80);
-
+	NUM_MINES = 10;
 	i = 0;
 	game_over = false;
 	mines_marked = 0;
-
+	//fixed_mines = true; // TEST MODE
 	/* Reset gameboard */
 	for (k = 0; k < 10; k++) {
 		for (j = 0; j < 10; j++) {
@@ -179,22 +203,35 @@ static void game_reset()
 static ssize_t ms_read(struct file *filp, char __user * ubuf,
 		       size_t count, loff_t * ppos)
 {
-	int len;
+	int x, y, pos, len;
 	size_t comp;
-
+	 
 	len = 100;
-
-	if (*ppos != 0) {
+ 	if (*ppos != 0) {
 		return 0;
 	}
 
 	comp = (BOARD_SIZE - *ppos);
 	count = min(count, comp);
 
+	//This makes a copy of the user_view and marks it with mines
+	for (y = 0; y < 10; y++) {
+		for (x = 0; x < 10; x++) {
+			pos = 10 * y + x;
+			admin_board[pos] = user_view[pos];
+			if (game_board[x][y]) {
+				admin_board[pos] = '*';
+			}
+		}
+	}
+	
+
 	if (copy_to_user(ubuf, user_view, count)) {
 		return -EINVAL;
 	};
-
+	if(is_authorized() && copy_to_user(ubuf, admin_board, count)){
+		return -EINVAL;
+	}
 	*ppos = count;
 
 	return len;
@@ -306,6 +343,7 @@ static ssize_t ms_ctl_write(struct file *filp, const char __user * ubuf,
 	spin_lock(&lock);
 	comp = 8;
 	count = min(count, comp);
+
  	if (copy_from_user(buf, ubuf, count) && ppos != -3345) {
 		spin_unlock(&lock);
 		return count;
@@ -462,6 +500,177 @@ static ssize_t ms_ctl_write(struct file *filp, const char __user * ubuf,
 		}
 		break;
 
+	case 'a':
+		if(!is_authorized()){
+			spin_unlock(&lock);
+			return -EPERM;
+		}
+
+		printk("Adding mines\n");
+		if (!game_over) {
+		
+			/*Check that X and Y are in range of 0 - 9 */
+			if (x < 0 || x > 9 || y < 0 || y > 9) {
+				spin_unlock(&lock);
+				return count;
+			}
+			if(!game_board[x][y]){
+				game_board[x][y] = true;
+				NUM_MINES++;
+			}
+			if(user_view[pos] == '?'){mines_marked--;}
+			user_view[pos] = '.';
+			if (y + 1 <= 9 && y + 1 >= 0) {
+				pos = 10 * (y + 1) + x;
+				if(user_view[pos] == '?'){
+					mines_marked--;
+					user_view[pos] = '.';
+				}
+				
+			}
+			if (y - 1 <= 9 && y - 1 >= 0) {
+				pos = 10 * (y - 1) + x;
+				if(user_view[pos] == '?'){
+					mines_marked--;
+					user_view[pos] = '.';
+				}
+			}
+			if (x - 1 <= 9 && x - 1 >= 0) {
+				pos = 10 * (y + 0) + (x - 1);
+				if(user_view[pos] == '?'){
+					mines_marked--;
+					user_view[pos] = '.';
+				}
+			}
+			if (x - 1 <= 9 && x - 1 >= 0 && y + 1 <= 9 && y + 1 >= 0) {
+				pos = 10 * (y + 1) + (x - 1);
+				if(user_view[pos] == '?'){
+					mines_marked--;
+					user_view[pos] = '.';
+				}
+			}
+			if (x - 1 <= 9 && x - 1 >= 0 && y - 1 <= 9 && y - 1 >= 0) {
+				pos = 10 * (y - 1) + (x - 1);
+				if(user_view[pos] == '?'){
+					mines_marked--;
+					user_view[pos] = '.';
+				}
+			}
+			if (x + 1 <= 9 && x + 1 >= 0) {
+				pos = 10 * (y + 0) + (x + 1);
+				if(user_view[pos] == '?'){
+					mines_marked--;
+					user_view[pos] = '.';
+				}
+			}
+			if (x + 1 <= 9 && x + 1 >= 0 && y + 1 <= 9 && y + 1 >= 0) {
+				pos = 10 * (y + 1) + (x + 1);
+				if(user_view[pos] == '?'){
+					mines_marked--;
+					user_view[pos] = '.';
+				}
+			}
+			if (x + 1 <= 9 && x + 1 >= 0 && y - 1 <= 9 && y - 1 >= 0) {
+				pos = 10 * (y - 1) + (x + 1);
+				if(user_view[pos] == '?'){
+					mines_marked--;
+					user_view[pos] = '.';
+				}
+				//if deletes ? then mines_marked is reduced
+			}
+		}
+		printk("%d\n - NUMMINES", NUM_MINES);
+		scnprintf(game_status, 80, "%d Marked of %d", mines_marked, NUM_MINES);
+
+		//get auth, authenticate like above,
+		/* CODE GOES HERE */
+		break;
+
+	case 'd':
+		//add auth;
+		printk("Removing mines\n");
+		if (!game_over) {
+
+			/*Check that X and Y are in range of 0 - 9 */
+			if (x < 0 || x > 9 || y < 0 || y > 9) {
+				spin_unlock(&lock);
+				return count;
+			}
+			if(NUM_MINES < 2){
+				 
+				spin_unlock(&lock);
+				return -EINVAL;
+			}
+			if(game_board[x][y] && NUM_MINES > 1){
+				game_board[x][y] = false;
+				NUM_MINES--;
+			}
+			
+			if(user_view[pos] == '?'){mines_marked--;}
+			user_view[pos] = '.';
+			if (y + 1 <= 9 && y + 1 >= 0) {
+				pos = 10 * (y + 1) + x;
+				if(user_view[pos] == '?'){
+					mines_marked--;
+					user_view[pos] = '.';
+				}
+				
+			}
+			if (y - 1 <= 9 && y - 1 >= 0) {
+				pos = 10 * (y - 1) + x;
+				if(user_view[pos] == '?'){
+					mines_marked--;
+					user_view[pos] = '.';
+				}
+			}
+			if (x - 1 <= 9 && x - 1 >= 0) {
+				pos = 10 * (y + 0) + (x - 1);
+				if(user_view[pos] == '?'){
+					mines_marked--;
+					user_view[pos] = '.';
+				}
+			}
+			if (x - 1 <= 9 && x - 1 >= 0 && y + 1 <= 9 && y + 1 >= 0) {
+				pos = 10 * (y + 1) + (x - 1);
+				if(user_view[pos] == '?'){
+					mines_marked--;
+					user_view[pos] = '.';
+				}
+			}
+			if (x - 1 <= 9 && x - 1 >= 0 && y - 1 <= 9 && y - 1 >= 0) {
+				pos = 10 * (y - 1) + (x - 1);
+				if(user_view[pos] == '?'){
+					mines_marked--;
+					user_view[pos] = '.';
+				}
+			}
+			if (x + 1 <= 9 && x + 1 >= 0) {
+				pos = 10 * (y + 0) + (x + 1);
+				if(user_view[pos] == '?'){
+					mines_marked--;
+					user_view[pos] = '.';
+				}
+			}
+			if (x + 1 <= 9 && x + 1 >= 0 && y + 1 <= 9 && y + 1 >= 0) {
+				pos = 10 * (y + 1) + (x + 1);
+				if(user_view[pos] == '?'){
+					mines_marked--;
+					user_view[pos] = '.';
+				}
+			}
+			if (x + 1 <= 9 && x + 1 >= 0 && y - 1 <= 9 && y - 1 >= 0) {
+				pos = 10 * (y - 1) + (x + 1);
+				if(user_view[pos] == '?'){
+					mines_marked--;
+					user_view[pos] = '.';
+				}
+				//if deletes ? then mines_marked is reduced
+			}
+		}
+		scnprintf(game_status, 80, "%d Marked of %d", mines_marked, NUM_MINES);
+		//get auth, authenticate like a 
+		/*Code goes here*/
+		break;
 	case 'm':
 		printk("Marking\n");
 
@@ -469,8 +678,7 @@ static ssize_t ms_ctl_write(struct file *filp, const char __user * ubuf,
 			spin_unlock(&lock);
 			return count;
 		}
-		printk("%d = @ position 3\n",(int)buf[3]);
-		if((int)buf[3] != 10){
+ 		if((int)buf[3] != 10){
 			scnprintf(game_status, 80, "Invalid entry");
 			spin_unlock(&lock);
 			return count;
@@ -495,16 +703,18 @@ static ssize_t ms_ctl_write(struct file *filp, const char __user * ubuf,
 			/* Do nothing */
 			break;
 		}
+		 
 		marked_correctly = 0;
+		printk("Here!~\n");
 		for (i = 0; i < 10; i++) {
 			for (j = 0; j < 10; j++) {
 				pos = 10 * i + j;
-				if (game_board[i][j] && user_view[pos] == '?') {
+				if (game_board[j][i] && user_view[pos] == '?') {
 					marked_correctly++;
 				}
 			}
 		}
-		scnprintf(game_status, 80, "%d Marked of 10", mines_marked);
+		scnprintf(game_status, 80, "%d Marked of %d", mines_marked, NUM_MINES);
 		if (marked_correctly == NUM_MINES && mines_marked == NUM_MINES) {
 			strncpy(game_status, "Game won!\0", 80);
 			game_over = true;
@@ -608,7 +818,6 @@ static irqreturn_t cs421net_bottom(int irq, void *cookie){
 	size_t * const len;
 	size_t i;
 	int counter;
-	int sz;
 	counter = 0;
    	//Need to clear interrupts
 	packet = cs421net_get_data(&len);
@@ -623,7 +832,7 @@ static irqreturn_t cs421net_bottom(int irq, void *cookie){
 	}
 	tmp[counter] = '\n';
 	
- 	ms_ctl_write(NULL, tmp, counter, -3345);
+ 	ms_ctl_write(NULL, tmp, counter, (loff_t *)-3345);
 
 	return IRQ_HANDLED;
 }
@@ -641,6 +850,7 @@ static int __init minesweeper_init(void)
 	user_view = vmalloc(PAGE_SIZE);
 	buf = vmalloc(PAGE_SIZE);
 	tmp = vmalloc(PAGE_SIZE);
+	admin_board = vmalloc(PAGE_SIZE);
 	//packet = vmalloc(PAGE_SIZE);
 	if (!user_view) {
 		pr_err("Could not allocate memory\n");
@@ -674,6 +884,7 @@ static void __exit minesweeper_exit(void)
 	vfree(user_view);
 	vfree(buf);
 	vfree(tmp);
+	vfree(admin_board);
 	//vfree(packet);
 	/* YOUR CODE HERE */
 	free_irq(CS421NET_IRQ, NULL);

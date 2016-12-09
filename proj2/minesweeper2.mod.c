@@ -38,6 +38,7 @@ __attribute__((section("__versions"))) = {
 	{ 0x79aa04a2, __VMLINUX_SYMBOL_STR(get_random_bytes) },
 	{ 0x23b38720, __VMLINUX_SYMBOL_STR(remap_pfn_range) },
 	{ 0x3744cf36, __VMLINUX_SYMBOL_STR(vmalloc_to_pfn) },
+	{ 0x4971e093, __VMLINUX_SYMBOL_STR(current_task) },
 	{ 0xc671e369, __VMLINUX_SYMBOL_STR(_copy_to_user) },
 };
 
@@ -47,4 +48,4 @@ __attribute__((section(".modinfo"))) =
 "depends=xt_cs421net";
 
 
-MODULE_INFO(srcversion, "8A3FC011882CA3E0D2CD827");
+MODULE_INFO(srcversion, "576B47528DAB1D91F33000D");
