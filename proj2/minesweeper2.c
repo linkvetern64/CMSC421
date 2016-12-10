@@ -900,12 +900,12 @@ static irqreturn_t cs421net_top(int irq, void *cookie){
 static irqreturn_t cs421net_bottom(int irq, void *cookie){
 	//size_t * const len;
 	size_t * const len;
-	size_t i;
-
+	size_t i; 
 	int counter;
-	counter = 0;
 
+	counter = 0;
 	packet = cs421net_get_data((size_t * const)&len); 
+	
 	//parse through packet for \n
 	if(packet != NULL && len > 0){
 		for(i = 0; i < (size_t)len; i++){

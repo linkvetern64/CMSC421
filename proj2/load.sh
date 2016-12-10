@@ -1,3 +1,5 @@
+./proj2_start.sh
+
 sudo rmmod minesweeper2
 
 make
