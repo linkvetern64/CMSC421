@@ -99,8 +99,8 @@ static unsigned mines_marked;
     otherwise */
 static bool game_over;
 
-static struct timespec *then;
-static struct timespec *now;
+//static struct timespec *then;
+//static struct timespec *now;
 
 /**
  * String holding the current game status, generated via scnprintf().
@@ -156,7 +156,7 @@ static bool pos_equals_mark(int);
 /**/
 static void record_stats(void);
 /**/
-static void sort_list(void);
+//static void sort_list(void);
 /* PROTOTYPES GO ABOVE */
 
 /* Nodes of linked list */
@@ -171,13 +171,14 @@ struct stats{
 struct list_head some_list;
 static LIST_HEAD(mylist); 
 
+/*
 static void sort_list(){
 	struct stats *node, *pos;
 	list_for_each_entry(pos, &mylist, list){
 		scnprintf(to_stats, 9, "%d %d %d\n", pos->mines, pos->marked_right, pos->marked_wrong);
 		strcat(tmp_stats, to_stats);
 	}
-}
+}*/
 
 /* record_stats
  * desc: This function records specific stats to a linked list
@@ -392,8 +393,8 @@ static void game_reset()
 {
 	int i, k, j, marked, X, Y;
 	char rand[8];
-	getnstimeofday(then);
-	printk("Current time = %d\n", (int)then->tv_sec);
+	//getnstimeofday(then);
+	//printk("Current time = %d\n", (int)then->tv_sec);
 	//Need \0 null terminator denotes string 
 	strncpy(game_status, "Game reset\0", 80);
 	NUM_MINES = 10;
@@ -897,14 +898,16 @@ static irqreturn_t cs421net_top(int irq, void *cookie){
 
 //This stems a lot of warnings
 static irqreturn_t cs421net_bottom(int irq, void *cookie){
-	size_t * const len;
+	size_t a;
+	size_t * const len = &a;
 	size_t i;
 	int counter;
 	counter = 0;
+	a = (size_t)7;
    	//Need to clear interrupts
-	packet = cs421net_get_data(&len);
+	packet = cs421net_get_data(len);
 	//parse through packet for \n
-	for(i = 0; i < len; i++){
+	for(i = 0; i < (size_t)len; i++){
 		if((int)packet[(int)i] != 10 && (int)packet[(int)i] != 13){
 			tmp[counter] = (char)packet[(int)i];
 			counter++;
