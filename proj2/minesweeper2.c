@@ -896,30 +896,30 @@ static irqreturn_t cs421net_top(int irq, void *cookie){
 }
 
 
-//This stems a lot of warnings
+
 static irqreturn_t cs421net_bottom(int irq, void *cookie){
-	size_t a;
 	//size_t * const len;
-	size_t * const len = &a;
+	size_t * const len;
 	size_t i;
+
 	int counter;
 	counter = 0;
-	a = (size_t)7;
-   	//Need to clear interrupts
-   	//&len
-	packet = cs421net_get_data(len);
+
+	packet = cs421net_get_data((size_t * const)&len); 
 	//parse through packet for \n
-	for(i = 0; i < (size_t)len; i++){
-		if((int)packet[(int)i] != 10 && (int)packet[(int)i] != 13){
-			tmp[counter] = (char)packet[(int)i];
-			counter++;
-		
+	if(packet != NULL && len > 0){
+		for(i = 0; i < (size_t)len; i++){
+			if((int)packet[(int)i] != 10 && (int)packet[(int)i] != 13){
+				tmp[counter] = (char)packet[(int)i];
+				counter++;
+			
+			}
 		}
-	}
-	tmp[counter] = '\n';
-	net_sig = true;
- 	ms_ctl_write(NULL, tmp, counter, 0);
- 	net_sig = false;
+		tmp[counter] = '\n';
+		net_sig = true;
+	 	ms_ctl_write(NULL, tmp, counter, 0);
+	 	net_sig = false;
+ 	}
 	return IRQ_HANDLED;
 }
 
