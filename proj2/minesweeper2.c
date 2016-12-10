@@ -49,7 +49,7 @@
 #include <linux/gfp.h>
 #include <linux/list.h>
 #include <linux/slab.h>
-
+#include <linux/time.h>
 
 #define NUM_ROWS 10
 #define NUM_COLS 10
@@ -98,6 +98,9 @@ static unsigned mines_marked;
 /** true if user revealed a square containing a mine, false
     otherwise */
 static bool game_over;
+
+static struct timespec *then;
+static struct timespec *now;
 
 /**
  * String holding the current game status, generated via scnprintf().
@@ -152,8 +155,8 @@ static bool is_authorized(void);
 static bool pos_equals_mark(int);
 /**/
 static void record_stats(void);
-/*Test function*/
-static void print_list(void);
+/**/
+static void sort_list(void);
 /* PROTOTYPES GO ABOVE */
 
 /* Nodes of linked list */
@@ -168,6 +171,13 @@ struct stats{
 struct list_head some_list;
 static LIST_HEAD(mylist); 
 
+static void sort_list(){
+	struct stats *node, *pos;
+	list_for_each_entry(pos, &mylist, list){
+		scnprintf(to_stats, 9, "%d %d %d\n", pos->mines, pos->marked_right, pos->marked_wrong);
+		strcat(tmp_stats, to_stats);
+	}
+}
 
 /* record_stats
  * desc: This function records specific stats to a linked list
@@ -177,7 +187,22 @@ static LIST_HEAD(mylist);
 static void record_stats(){
 	/*Logic to determine stats here*/
 	struct stats *node, *pos;
-	int i, len;
+	int i, j, len, marked_correctly, loc;
+
+
+	marked_correctly = 0;
+	right = 0;
+	loc = 0;
+	for (i = 0; i < 10; i++) {
+		for (j = 0; j < 10; j++) {
+			loc = 10 * i + j;
+			if (game_board[j][i] && user_view[loc] == '?') {
+				marked_correctly++;
+			}
+		}
+	}
+	right = marked_correctly;
+
 
 	node = kzalloc(sizeof(*node), GFP_KERNEL);
 	if(!node){
@@ -189,11 +214,12 @@ static void record_stats(){
 	node->marked_wrong = mines_marked - right;
 
 	list_add_tail(&node->list, &mylist);
-
+	i = 0;
 	while (i < PAGE_SIZE) {
 		stats_view[i++] = ' ';
 	}
-	len, i = 0;
+	len = 0;
+	i = 0;
 
 	tmp_stats[0] = '\0'; 
 	list_for_each_entry(pos, &mylist, list){
@@ -201,22 +227,15 @@ static void record_stats(){
 		strcat(tmp_stats, to_stats);
 	}
 	//RECORD STATS IS WORKING
+	printk("New stats\n");
 	for(i = 0; i < strlen(tmp_stats); i++){
 		stats_view[i] = tmp_stats[i];
 		printk("%c", stats_view[i]);
 	}
-
- 	//print_list();
 }
 
 
-
-static void print_list(){
-	struct stats *pos;
-	list_for_each_entry(pos, &mylist, list){
-		pr_info("VAL : %d %d %d\n", pos->mines, pos->marked_right, pos->marked_wrong);
-	}
-}
+ 
 
 /*
  *
@@ -243,7 +262,6 @@ static bool pos_equals_mark(int pos){
  */
 static ssize_t delta_mines(int ops, int x, int y, size_t count){
 	int pos;
-	bool dMine;
 
 	if(!is_authorized() || net_sig){
 		spin_unlock(&lock);
@@ -251,12 +269,7 @@ static ssize_t delta_mines(int ops, int x, int y, size_t count){
 	}
 
 	//to add mine greater than 0, to remove mine less than 0
-	if(ops > 0){
-		dMine = true;
-	}
-	else{
-		dMine = false;
-	}
+	
 
 	pos = 10 * y + x;
 
@@ -267,10 +280,26 @@ static ssize_t delta_mines(int ops, int x, int y, size_t count){
 			spin_unlock(&lock);
 			return count;
 		}
-		if(!game_board[x][y] || !dMine){
-			game_board[x][y] = dMine;
-			NUM_MINES+=ops;
+		//broken when adding / subtracting mines
+		if(ops > 0){
+			if(!game_board[x][y] && NUM_MINES < 100){
+				game_board[x][y] = true;
+				NUM_MINES += 1;
+			}
+			else{
+				//scnprintf(game_status, 80, "Can't add more mines.");
+			}
 		}
+		else{
+			if(game_board[x][y] && NUM_MINES > 1){
+				game_board[x][y] = false;
+				NUM_MINES += -1;
+			}
+			else{
+				//scnprintf(game_status, 80, "Must have atleast 1 mine.");
+			}
+		}
+		
 
 		if(user_view[pos] == '?'){mines_marked--;}
 		user_view[pos] = '.';
@@ -304,7 +333,7 @@ static ssize_t delta_mines(int ops, int x, int y, size_t count){
 static bool check_won(void){
 	int marked_correctly, i, j, pos;
 	marked_correctly = 0;
-	 
+	right = 0;
 	for (i = 0; i < 10; i++) {
 		for (j = 0; j < 10; j++) {
 			pos = 10 * i + j;
@@ -363,13 +392,15 @@ static void game_reset()
 {
 	int i, k, j, marked, X, Y;
 	char rand[8];
+	getnstimeofday(then);
+	printk("Current time = %d\n", (int)then->tv_sec);
 	//Need \0 null terminator denotes string 
 	strncpy(game_status, "Game reset\0", 80);
 	NUM_MINES = 10;
 	i = 0;
 	game_over = false;
 	mines_marked = 0;
-	fixed_mines = true; // TEST MODE
+	//fixed_mines = true; // TEST MODE
 	/* Reset gameboard */
 	for (k = 0; k < 10; k++) {
 		for (j = 0; j < 10; j++) {
@@ -790,10 +821,14 @@ static ssize_t ms_ctl_write(struct file *filp, const char __user * ubuf,
 			return count;
 		}
 
+		
+
 
 		/* User quits the game */
 		strncpy(game_status, "You lose!\0", 80);
-		record_stats();
+		if(!game_over){
+			record_stats();
+		}
 		game_over = true;
 		game_reveal_mines();
 		break;

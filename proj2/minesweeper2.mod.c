@@ -33,7 +33,6 @@ __attribute__((section("__versions"))) = {
 	{ 0xb5419b40, __VMLINUX_SYMBOL_STR(_copy_from_user) },
 	{ 0xdbbee5cd, __VMLINUX_SYMBOL_STR(_raw_spin_lock) },
 	{ 0x6c1988ba, __VMLINUX_SYMBOL_STR(_raw_spin_unlock) },
-	{ 0x27e1a049, __VMLINUX_SYMBOL_STR(printk) },
 	{ 0x754d539c, __VMLINUX_SYMBOL_STR(strlen) },
 	{ 0x61651be, __VMLINUX_SYMBOL_STR(strcat) },
 	{ 0x4ca9669f, __VMLINUX_SYMBOL_STR(scnprintf) },
@@ -41,6 +40,8 @@ __attribute__((section("__versions"))) = {
 	{ 0xfb272fc1, __VMLINUX_SYMBOL_STR(kmalloc_caches) },
 	{ 0xdb7305a1, __VMLINUX_SYMBOL_STR(__stack_chk_fail) },
 	{ 0x79aa04a2, __VMLINUX_SYMBOL_STR(get_random_bytes) },
+	{ 0x27e1a049, __VMLINUX_SYMBOL_STR(printk) },
+	{ 0x211f68f1, __VMLINUX_SYMBOL_STR(getnstimeofday64) },
 	{ 0x4971e093, __VMLINUX_SYMBOL_STR(current_task) },
 	{ 0xc671e369, __VMLINUX_SYMBOL_STR(_copy_to_user) },
 	{ 0x23b38720, __VMLINUX_SYMBOL_STR(remap_pfn_range) },
@@ -53,4 +54,4 @@ __attribute__((section(".modinfo"))) =
 "depends=xt_cs421net";
 
 
-MODULE_INFO(srcversion, "FA2C19A84A5BD7BAC6F12CD");
+MODULE_INFO(srcversion, "38A7B63F29F4F9AD3D58059");
