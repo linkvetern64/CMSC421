@@ -41,6 +41,7 @@ __attribute__((section("__versions"))) = {
 	{ 0xfb272fc1, __VMLINUX_SYMBOL_STR(kmalloc_caches) },
 	{ 0xdb7305a1, __VMLINUX_SYMBOL_STR(__stack_chk_fail) },
 	{ 0x79aa04a2, __VMLINUX_SYMBOL_STR(get_random_bytes) },
+	{ 0x4f68e5c9, __VMLINUX_SYMBOL_STR(do_gettimeofday) },
 	{ 0x4971e093, __VMLINUX_SYMBOL_STR(current_task) },
 	{ 0xc671e369, __VMLINUX_SYMBOL_STR(_copy_to_user) },
 	{ 0x23b38720, __VMLINUX_SYMBOL_STR(remap_pfn_range) },
@@ -53,4 +54,4 @@ __attribute__((section(".modinfo"))) =
 "depends=xt_cs421net";
 
 
-MODULE_INFO(srcversion, "F3876530866AE426E23CD72");
+MODULE_INFO(srcversion, "B923764677459FB08BEA275");

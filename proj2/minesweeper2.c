@@ -99,8 +99,8 @@ static unsigned mines_marked;
     otherwise */
 static bool game_over;
 
-//static struct timespec *then;
-//static struct timespec *now;
+static struct timeval then;
+static struct timeval now;
 
 /**
  * String holding the current game status, generated via scnprintf().
@@ -188,8 +188,8 @@ static void sort_list(){
 static void record_stats(){
 	/*Logic to determine stats here*/
 	struct stats *node, *pos;
-	int i, j, len, marked_correctly, loc;
-
+	int i, j, len, marked_correctly, loc, time;
+	time = (int)(now.tv_sec - then.tv_sec);
 
 	marked_correctly = 0;
 	right = 0;
@@ -224,7 +224,7 @@ static void record_stats(){
 
 	tmp_stats[0] = '\0'; 
 	list_for_each_entry(pos, &mylist, list){
-		len += scnprintf(to_stats, 9, "%d %d %d\n", pos->mines, pos->marked_right, pos->marked_wrong);
+		len += scnprintf(to_stats, 9, "%d %d %d %d\n", time, pos->mines, pos->marked_right, pos->marked_wrong);
 		strcat(tmp_stats, to_stats);
 	}
 	//RECORD STATS IS WORKING
@@ -347,6 +347,7 @@ static bool check_won(void){
 	scnprintf(game_status, 80, "%d Marked of %d", mines_marked, NUM_MINES);
 	if (marked_correctly == NUM_MINES && mines_marked == NUM_MINES) {
 		strncpy(game_status, "Game won!\0", 80);
+		do_gettimeofday(&now);
 		record_stats();
 		game_over = true;
 	}	
@@ -393,15 +394,15 @@ static void game_reset()
 {
 	int i, k, j, marked, X, Y;
 	char rand[8];
-	//getnstimeofday(then);
+	do_gettimeofday(&then);
 	//printk("Current time = %d\n", (int)then->tv_sec);
 	//Need \0 null terminator denotes string 
 	strncpy(game_status, "Game reset\0", 80);
-	NUM_MINES = 10;
+	NUM_MINES = 2;
 	i = 0;
 	game_over = false;
 	mines_marked = 0;
-	//fixed_mines = true; // TEST MODE
+	fixed_mines = true; // TEST MODE
 	/* Reset gameboard */
 	for (k = 0; k < 10; k++) {
 		for (j = 0; j < 10; j++) {
@@ -687,6 +688,7 @@ static ssize_t ms_ctl_write(struct file *filp, const char __user * ubuf,
 			strncpy(game_status, "You lose!\0", 80);
 			record_stats();
 			game_reveal_mines();
+			do_gettimeofday(&now);
 			game_over = true;
 			spin_unlock(&lock);
 			return count;
@@ -830,6 +832,7 @@ static ssize_t ms_ctl_write(struct file *filp, const char __user * ubuf,
 		if(!game_over){
 			record_stats();
 		}
+		do_gettimeofday(&now);
 		game_over = true;
 		game_reveal_mines();
 		break;
