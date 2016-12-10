@@ -899,12 +899,14 @@ static irqreturn_t cs421net_top(int irq, void *cookie){
 //This stems a lot of warnings
 static irqreturn_t cs421net_bottom(int irq, void *cookie){
 	size_t a;
+	//size_t * const len;
 	size_t * const len = &a;
 	size_t i;
 	int counter;
 	counter = 0;
 	a = (size_t)7;
    	//Need to clear interrupts
+   	//&len
 	packet = cs421net_get_data(len);
 	//parse through packet for \n
 	for(i = 0; i < (size_t)len; i++){
