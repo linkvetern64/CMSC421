@@ -47,11 +47,11 @@ unsigned test_passed, test_failed;
 int main(void) {
 	cs421net_init();
 	
-	pthread_t players[THREAD_COUNT];
-	char stress[PAGE_SIZE];
-	for(int i = 0; i < PAGE_SIZE; i++){
+	//pthread_t players[THREAD_COUNT];
+	//char stress[PAGE_SIZE];
+	/*for(int i = 0; i < PAGE_SIZE; i++){
 		stress[i] = 'G';
-	}
+	}*/
 
 	test_passed = 0;
 	test_failed = 0;
@@ -76,220 +76,33 @@ int main(void) {
 
 
  	/*------------------------------------------------*/
-
-	printf("Test 1: Status Correctly Displayed:\n");
-	/* Test for game reset status */
-	printf("\nGame Reset Status Displayed:\n");
-	if(write(fd_write, "s\n" , 3)){/*Expected write to work*/}
-	if(read(fd_read_ms_ctl, status, sizeof(status)) <= 0){
-		printf("Failure to read on %d\n", __LINE__);
-	}
- 	if(!strcmp(status, "Game reset")){test_passed++;}
+	//This test will test basic inputs
+	printf("Test 1: Testing Network Input:\n");
+	printf("\nSending Basic Inputs:\n");
+	if(cs421net_send("q", 1)){/*usleep(50);*/}
+ 	if(board[0] == '*'){test_passed++;}
  	else{test_failed++;}
- 	print_table();
- 	rewind_fd();
-
- 	/*------------------------------------------------*/
-
- 	printf("\n0 Marked Status Displayed:\n\n");
-	/* Test for correct markings status */
-	if(write(fd_write, "r10\n" , 4)){/*Expected write to work*/}
-	if(read(fd_read_ms_ctl, status, sizeof(status)) <= 0){
-		printf("Failure to read on %d\n", __LINE__);
-	}
- 	if(!strcmp(status, "0 Marked of 10")){test_passed++;}
- 	else{test_failed++;}
- 	print_table();
- 	rewind_fd();
-
- 	/*------------------------------------------------*/
- 
- 	printf("\n1 Marked Status Displayed:\n");
-	/* Test for marked status */
-	if(write(fd_write, "m00\n" , 4)){/*Expected write to work*/}	
-	if(read(fd_read_ms_ctl, status, sizeof(status)) <= 0){
-		printf("Failure to read on %d\n", __LINE__);
-	}
- 	if(!strcmp(status, "1 Marked of 10")){test_passed++;}
- 	else{test_failed++;}
- 	print_table();
- 	rewind_fd();
-
- 	/*------------------------------------------------*/
- 
- 	printf("\nGame Won Status Displayed:\n");
- 	/* Test for You win! */
- 	if(write(fd_write, "m11\n" , 4)){/*Expected write to work*/}
- 	if(write(fd_write, "m22\n" , 4)){/*Expected write to work*/}
- 	if(write(fd_write, "m33\n" , 4)){/*Expected write to work*/}
- 	if(write(fd_write, "m44\n" , 4)){/*Expected write to work*/}
- 	if(write(fd_write, "m55\n" , 4)){/*Expected write to work*/}
- 	if(write(fd_write, "m66\n" , 4)){/*Expected write to work*/}
- 	if(write(fd_write, "m77\n" , 4)){/*Expected write to work*/}
- 	if(write(fd_write, "m88\n" , 4)){/*Expected write to work*/}
- 	if(write(fd_write, "m99\n" , 4)){/*Expected write to work*/}
-	if(read(fd_read_ms_ctl, status, sizeof(status)) <= 0){
-		printf("Failure to read on %d\n", __LINE__);
-	}
- 	if(!strcmp(status, "Game won!")){test_passed++;}
- 	else{test_failed++;}
- 	print_table();
- 	rewind_fd();
-
- 	/*------------------------------------------------*/
- 
-	printf("\nGame Over Status Displayed:\n");
- 	/* Reveal mine space and game over */
-	if(write(fd_write, "s\n" , 3)){/*Expected write to work*/}
- 	if(write(fd_write, "r00\n" , 4)){/*Expected write to work*/}
-	if(read(fd_read_ms_ctl, status, sizeof(status)) <= 0){
-		printf("Failure to read on %d\n", __LINE__);
-	}
- 	if(!strcmp(status, "You lose!")){test_passed++;}
- 	else{test_failed++;}
- 	print_table();
- 	rewind_fd();
-
- 	/*------------------------------------------------*/
- 
- 	printf("\nGame Over Status Displayed:\n");
-	/* Test for You lose! status */
-	if(write(fd_write, "s\n" , 3)){/*Expected write to work*/}
- 	if(write(fd_write, "q\n" , 3)){/*Expected write to work*/}
-	if(read(fd_read_ms_ctl, status, sizeof(status)) <= 0){
-		printf("Failure to read on %d\n", __LINE__);
-	}
- 	if(!strcmp(status, "You lose!")){test_passed++;}
- 	else{test_failed++;}
- 	print_table();
- 	rewind_fd();
-
- 	/*------------------------------------------------*/
- 
- 	/*Use signal handler to catch signals.???*/
-
- 	/*------------------------------------------------*/
-
-
- 	/* Test concurrency locks */
- 	printf("\nTest 2: Concurrency Lock Testing\n");
- 	printf("\n1000 Threads Writing to /dev/ms:\n");
-	if(write(fd_write, "s\n" , 3)){/*Expected write to work*/}
-
- 	for(int i = 0; i < THREAD_COUNT; i++){
-   		if(pthread_create(&players[i], NULL, waiting, (void *)1)){
-      //printf("Failure in creating thread %d\n", i);
-    	}
-  	}
-	  	//Need to join threads so 
-	for(int j = 0; j < THREAD_COUNT; j++){
-	    pthread_join(players[j], NULL);
-	}
 	print_table();
-
-	printf("\nTest 3: Edge Cases\n");
-
-	/*--------------------------------------------------------*/
-
-	printf("\nTesting marking boundaries:\n");
- 	/* Reveal mine space and game over */
-	if(write(fd_write, "s\n" , 3)){/*Expected write to work*/}
- 	if(write(fd_write, "m00\n" , 4)){/*Expected write to work*/}
- 	if(write(fd_write, "m09\n" , 4)){/*Expected write to work*/}
- 	if(write(fd_write, "m90\n" , 4)){/*Expected write to work*/}
- 	if(write(fd_write, "m99\n" , 4)){/*Expected write to work*/}
-	if(board[0] == '?' && board[9] == '?' && board[90] == '?' && board[99] == '?'){test_passed++;}
+	if(cs421net_send("s", 1)){/*usleep(50);*/}
+ 	if(board[0] == '*'){test_passed++;}
  	else{test_failed++;}
- 	print_table();
- 	rewind_fd();
-
- 	/*---------------------------------------------------------*/
-
-	printf("\nTesting subtraction underflow boundaries:\n");
- 	/* Reveal mine space and game over */
- 	/*This is to check that the mine values aren't calculated 
-	  when the mines are logically adjacent*/
-	if(write(fd_write, "s\n" , 3)){/*Expected write to work*/}
- 	if(write(fd_write, "r09\n" , 4)){/*Expected write to work*/}
- 	if(write(fd_write, "r90\n" , 4)){/*Expected write to work*/}
-
-	if(board[90] == '-' && board[9] == '-'){test_passed++;}
+	print_table();
+	if(cs421net_send("m00", 3)){/*usleep(50);*/}
+ 	if(board[0] == '*'){test_passed++;}
  	else{test_failed++;}
- 	print_table();
- 	rewind_fd();
-
- 	/*---------------------------------------------------------*/
-
-	printf("\nTest 4: Stress Testing\n");
- 	printf("\nWriting 4kb to /dev/ms:\n");
-
-  	if(write(fd_write, "s\n" , 3)){/*Expected write to work*/}	
- 	if(write(fd_write, stress , PAGE_SIZE)){/*Expected to work*/}
- 	if(write(fd_write, "\n" , 2)){test_passed++;}
-
- 	if(read(fd_read_ms_ctl, status, sizeof(status)) <= 0){
-		printf("Failure to read on %d\n", __LINE__);
-	}
- 	print_table();
- 	rewind_fd();
-
-	/*---------------------------------------------------------*/
-
- 	printf("\nTest 5: Input After Game Over Testing\n");
- 	printf("\nSending Marking Inputs:\n");
-
-  	if(write(fd_write, "s\n" , 3)){/*Expected write to work*/}
-  	if(write(fd_write, "q\n" , 3)){/*Expected write to work*/}
- 	if(read(fd_read_ms_ctl, status, sizeof(status)) <= 0){
-		printf("Failure to read on %d\n", __LINE__);
-	}
-	rewind_fd();
- 	if(!strcmp(status, "You lose!")){
- 		char val = board[9];
-	  	if(write(fd_write, "m09\n" , 4)){/*Expected write to work*/}
- 		if(val == board[9]){test_passed++;}
- 		else{test_failed++;}
-
- 		val = board[2];
-	  	if(write(fd_write, "r02\n" , 4)){/*Expected write to work*/}
- 		if(val == board[2]){test_passed++;}
- 		else{test_failed++;}
-
- 		if(write(fd_write, "s\n" , 3)){/*Expected write to work*/}
-		if(read(fd_read_ms_ctl, status, sizeof(status)) <= 0){
-			printf("Failure to read on %d\n", __LINE__);
-		}
-	 	if(!strcmp(status, "Game reset")){test_passed++;}
-	 	else{test_failed++;}
-	 	print_table();
-	 }
+	print_table();
+	if(cs421net_send("r99", 3)){/*usleep(50);*/}
+ 	if(board[0] == '*'){test_passed++;}
+ 	else{test_failed++;}
+	print_table();
 	 /*---------------------------------------------------------*/
-	rewind_fd();
-	printf("\nTest 6: Testing Network Input\n");
- 	printf("\nSending Marking Inputs:\n");
-
-	//Test
+	 
  	
- 	//Works with or without \n
- 	if(cs421net_send("q", 1)){
- 		//give packet time to get there and be read
-		//usleep(1000);
 
- 		if(board[0] == '*'){test_passed++;}
- 		else{test_failed++;}
- 		/*Expected to work*/
- 	}
- 	else{
- 		printf("FAILED @ %d\n", __LINE__);
- 	}
- 	print_table();
+ 	
 
- 	 
 
- 	//Test
-
- 	rewind_fd();
- 	//print_stats();
+ 	
  	//Test results
  	printf("Tests %d of %d passed.\n", test_passed, (test_passed + test_failed));
 	return 0;

@@ -178,7 +178,8 @@ static void clear_revealed(int, int, int);
 /*Check defined function for description*/
 static int compare(void *, struct list_head *, struct list_head *);
 /**/
-static void update_board(void);
+static ssize_t update_board(const char *, size_t);
+
 
 /* PROTOTYPES GO ABOVE */
 
@@ -678,19 +679,25 @@ static ssize_t ms_ctl_read(struct file *filp, char __user * ubuf, size_t count,
 static ssize_t ms_ctl_write(struct file *filp, const char __user * ubuf,
 			    size_t count, loff_t * ppos)
 {
+	spin_lock(&lock);
+
+	if (copy_from_user(buf, ubuf, count) && !net_sig) {
+		return count;
+	}
+	return update_board(buf, count);
+}
+
+
+static ssize_t update_board(const char * ubuf, size_t count){
 	int x, y, pos, mines, l;
 	char op;
 	size_t comp;
-	if(!net_sig){
-		spin_lock(&lock);
-	}
+	
+	 
 	comp = 8;
 	count = min(count, comp);
 
- 	if (copy_from_user(buf, ubuf, count) && !net_sig) {
-		spin_unlock(&lock);
-		return count;
-	}
+ 	 
 	//-3345 identifier for net code
 	if(net_sig){
 		for(l = 0; l <= count; l++){
@@ -974,6 +981,7 @@ static irqreturn_t cs421net_bottom(int irq, void *cookie){
 	size_t i; 
 	int counter;
 	spin_lock(&lock);
+
 	counter = 0;
 	packet = cs421net_get_data((size_t * const)&len); 
 	
@@ -987,7 +995,8 @@ static irqreturn_t cs421net_bottom(int irq, void *cookie){
 		}
 		tmp[counter] = '\n';
 		net_sig = true;
-  	 	ms_ctl_write(NULL, tmp, counter, 0);
+		update_board(tmp, counter);
+  	 	//ms_ctl_write(NULL, tmp, counter, 0);
  	 	net_sig = false;
  	}
 	return IRQ_HANDLED;
@@ -1019,7 +1028,7 @@ static int __init minesweeper_init(void)
 	}
 	 
 	cs421net_enable();
-	if(request_threaded_irq(CS421NET_IRQ, cs421net_top, cs421net_bottom, 0, "421 HERE TEST" , NULL) == 0){
+	if(request_threaded_irq(CS421NET_IRQ, cs421net_top, cs421net_bottom, 0, "421 IRQ" , NULL) == 0){
 		//pr_info("request IRQ worked successfully\n");
 	}
 	else{
