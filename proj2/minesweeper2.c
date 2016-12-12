@@ -60,6 +60,7 @@
 /*Spinlock to handle critical sections when modifying board*/
 static DEFINE_SPINLOCK(lock);
 
+ 
 /*defined as 10 by default*/
 static int NUM_MINES;
 
@@ -231,11 +232,9 @@ static void record_stats(){
 	}	
 
 	//pr_info("Sorting linked list:\n");
-	printk("New stats\n");
-	for(i = 0; i < strlen(tmp_stats); i++){
+ 	for(i = 0; i < strlen(tmp_stats); i++){
 		stats_view[i] = tmp_stats[i];
-		printk("%c", stats_view[i]);
-	}
+ 	}
 }
 
 /* Name: clear_revealed
@@ -407,8 +406,7 @@ static void game_reset()
 	int i, k, j, marked, X, Y;
 	char rand[8];
 	do_gettimeofday(&then);
-	//printk("Current time = %d\n", (int)then->tv_sec);
-	//Need \0 null terminator denotes string 
+ 	//Need \0 null terminator denotes string 
 	strncpy(game_status, "Game reset\0", 80);
 	NUM_MINES = 10;
 	i = 0;
@@ -637,7 +635,9 @@ static ssize_t ms_ctl_write(struct file *filp, const char __user * ubuf,
 	int x, y, pos, mines, l;
 	char op;
 	size_t comp;
+	
 	spin_lock(&lock);
+	
 	comp = 8;
 	count = min(count, comp);
 
@@ -832,7 +832,6 @@ static ssize_t ms_ctl_write(struct file *filp, const char __user * ubuf,
 		break;
 
 	case 'q':
-
 		if((int)buf[1] != 10 && !game_over){
 			scnprintf(game_status, 80, "Invalid entry");
 			spin_unlock(&lock);
@@ -938,13 +937,12 @@ static irqreturn_t cs421net_bottom(int irq, void *cookie){
 			if((int)packet[(int)i] != 10 && (int)packet[(int)i] != 13){
 				tmp[counter] = (char)packet[(int)i];
 				counter++;
-			
 			}
 		}
 		tmp[counter] = '\n';
 		net_sig = true;
-	 	ms_ctl_write(NULL, tmp, counter, 0);
-	 	net_sig = false;
+  	 	ms_ctl_write(NULL, tmp, counter, 0);
+ 	 	net_sig = false;
  	}
 	return IRQ_HANDLED;
 }
@@ -976,10 +974,10 @@ static int __init minesweeper_init(void)
 	 
 	cs421net_enable();
 	if(request_threaded_irq(CS421NET_IRQ, cs421net_top, cs421net_bottom, 0, "421 HERE TEST" , NULL) == 0){
-		pr_info("request IRQ worked successfully\n");
+		//pr_info("request IRQ worked successfully\n");
 	}
 	else{
-		pr_info("request IRQ failed\n");
+		//pr_info("request IRQ failed\n");
 	}	
 
 	misc_register(&ms);

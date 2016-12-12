@@ -6,7 +6,7 @@
  * concurrency issues and if the game breaks under
  * extreme conditions.
  */
-
+#define _BSD_SOURCE //For usleep
 #include <fcntl.h>
 #include <pthread.h>
 #include <stdio.h>
@@ -233,6 +233,8 @@ int main(void) {
  	print_table();
  	rewind_fd();
 
+	/*---------------------------------------------------------*/
+
  	printf("\nTest 5: Input After Game Over Testing\n");
  	printf("\nSending Marking Inputs:\n");
 
@@ -260,12 +262,34 @@ int main(void) {
 	 	if(!strcmp(status, "Game reset")){test_passed++;}
 	 	else{test_failed++;}
 	 	print_table();
-	 	}
+	 }
+	 /*---------------------------------------------------------*/
+	rewind_fd();
+	printf("\nTest 6: Testing Network Input\n");
+ 	printf("\nSending Marking Inputs:\n");
 
- 
+	//Test
+ 	
+ 	//Works with or without \n
+ 	if(cs421net_send("q", 1)){
+ 		//give packet time to get there and be read
+		usleep(1000);
+
+ 		if(board[0] == '*'){test_passed++;}
+ 		else{test_failed++;}
+ 		/*Expected to work*/
+ 	}
+ 	else{
+ 		printf("FAILED @ %d\n", __LINE__);
+ 	}
  	print_table();
+
+ 	 
+
+ 	//Test
+
  	rewind_fd();
- 	print_stats();
+ 	//print_stats();
  	//Test results
  	printf("Tests %d of %d passed.\n", test_passed, (test_passed + test_failed));
 	return 0;

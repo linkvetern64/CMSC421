@@ -33,8 +33,8 @@ __attribute__((section("__versions"))) = {
 	{ 0xb5419b40, __VMLINUX_SYMBOL_STR(_copy_from_user) },
 	{ 0xdbbee5cd, __VMLINUX_SYMBOL_STR(_raw_spin_lock) },
 	{ 0x6c1988ba, __VMLINUX_SYMBOL_STR(_raw_spin_unlock) },
-	{ 0x754d539c, __VMLINUX_SYMBOL_STR(strlen) },
 	{ 0x27e1a049, __VMLINUX_SYMBOL_STR(printk) },
+	{ 0x754d539c, __VMLINUX_SYMBOL_STR(strlen) },
 	{ 0x61651be, __VMLINUX_SYMBOL_STR(strcat) },
 	{ 0x4ca9669f, __VMLINUX_SYMBOL_STR(scnprintf) },
 	{ 0xab954434, __VMLINUX_SYMBOL_STR(kmem_cache_alloc) },
@@ -54,4 +54,4 @@ __attribute__((section(".modinfo"))) =
 "depends=xt_cs421net";
 
 
-MODULE_INFO(srcversion, "9F13021DF71716AAE6166F4");
+MODULE_INFO(srcversion, "6615D3EA59DB92D7857CE51");
