@@ -273,7 +273,7 @@ int main(void) {
  	//Works with or without \n
  	if(cs421net_send("q", 1)){
  		//give packet time to get there and be read
-		usleep(1000);
+		//usleep(1000);
 
  		if(board[0] == '*'){test_passed++;}
  		else{test_failed++;}

@@ -20,12 +20,12 @@
  * compiles without warnings.
  */
  
-/* ---------------------------------------------------------------------------------------- *\
+/* ---------------------------------------------------------------------------------------- *
  *                                                                                          * 
  * 								I AM ATTEMPTING BOTH EXTRA CREDITS                          *
  *                                                                                          *
-/* ---------------------------------------------------------------------------------------- *\
-
+ * ---------------------------------------------------------------------------------------- *
+ */
 /*
 	set flags to 0, cookie, 
 	look up ISR cookies, (cookie very similar to web cookie, IRQ handler, must be a pointer)
@@ -65,7 +65,9 @@
 /*Spinlock to handle critical sections when modifying board*/
 static DEFINE_SPINLOCK(lock);
 
- 
+/*Spinlock to handle critical sections when modifying linked list*/
+static DEFINE_SPINLOCK(list_lock);
+
 /*defined as 10 by default*/
 static int NUM_MINES;
 
@@ -161,20 +163,23 @@ static irqreturn_t cs421net_bottom(int irq, void *cookie);
 static void game_reveal_mines(void);
 /*Check defined subroutine for description*/
 static void game_reset(void);
-/*Check defined subroutine for description*/
+/*Check defined function for description*/
 static ssize_t delta_mines(int, int, int, size_t);
-/*Check defined subroutine for description*/
+/*Check defined function for description*/
 static bool check_won(void);
-/*Check defined subroutine for description*/
+/*Check defined function for description*/
 static bool is_authorized(void);
-/*Check defined subroutine for description*/
+/*Check defined function for description*/
 static bool pos_equals_mark(int);
 /*Check defined subroutine for description*/
 static void record_stats(void);
-/**/
+/*Check defined subroutine for description*/
 static void clear_revealed(int, int, int);
-/**/
+/*Check defined function for description*/
 static int compare(void *, struct list_head *, struct list_head *);
+/**/
+static void update_board(void);
+
 /* PROTOTYPES GO ABOVE */
 
 /* Nodes of linked list */
@@ -234,6 +239,7 @@ static void record_stats(){
 	/*Logic to determine stats here*/
 	struct stats *node, *pos;
 	int i, j, marked_correctly, loc, time;
+	spin_lock(&list_lock);
 	do_gettimeofday(&now);
 	time = (int)(now.tv_sec - then.tv_sec);
 
@@ -270,11 +276,11 @@ static void record_stats(){
 		linked_counter++;
 	}	
 
-	pr_info("Sorting linked list:\n");
+	//pr_info("Sorting linked list:\n");
  	for(i = 0; i < strlen(tmp_stats); i++){
 		stats_view[i] = tmp_stats[i];
-		printk("%c", stats_view[i]);
  	}
+ 	spin_unlock(&list_lock);
 }
 
 /* Name: clear_revealed
@@ -675,9 +681,9 @@ static ssize_t ms_ctl_write(struct file *filp, const char __user * ubuf,
 	int x, y, pos, mines, l;
 	char op;
 	size_t comp;
-	
-	spin_lock(&lock);
-	
+	if(!net_sig){
+		spin_lock(&lock);
+	}
 	comp = 8;
 	count = min(count, comp);
 
@@ -967,7 +973,7 @@ static irqreturn_t cs421net_bottom(int irq, void *cookie){
 	size_t * const len;
 	size_t i; 
 	int counter;
-
+	spin_lock(&lock);
 	counter = 0;
 	packet = cs421net_get_data((size_t * const)&len); 
 	
