@@ -19,8 +19,12 @@
  * Read ~/linux/Documentation/CodingStyle to ensure your project
  * compiles without warnings.
  */
-
-
+ 
+/* ---------------------------------------------------------------------------------------- *\
+ *                                                                                          * 
+ * 								I AM ATTEMPTING BOTH EXTRA CREDITS                          *
+ *                                                                                          *
+/* ---------------------------------------------------------------------------------------- *\
 
 /*
 	set flags to 0, cookie, 
@@ -57,6 +61,7 @@
 #define BOARD_SIZE (NUM_ROWS * NUM_COLS)
 #define CS421NET_IRQ 6
 
+ 
 /*Spinlock to handle critical sections when modifying board*/
 static DEFINE_SPINLOCK(lock);
 
@@ -168,22 +173,56 @@ static bool pos_equals_mark(int);
 static void record_stats(void);
 /**/
 static void clear_revealed(int, int, int);
+/**/
+static int compare(void *, struct list_head *, struct list_head *);
 /* PROTOTYPES GO ABOVE */
 
 /* Nodes of linked list */
 struct stats{
+	struct list_head list;
 	int mines;
 	int marked_right;
 	int marked_wrong;
 	int duration;
-	struct list_head list;
 };
 
 /*Compare function to be passed into sort_list*/
   
-struct list_head somelist;
 static LIST_HEAD(mylist); 
- 
+
+/*Name: compare
+ *Param: void * priv, list_head * a, list_head * b
+ *Desc:
+ * This function is passed into the list_sort function in record_stats.
+ * This compares the values of two nodes in the linked list and determines
+ * how they're sorted.
+ */ 
+static int compare(void * priv, struct list_head *a, struct list_head *b){
+	struct stats *A;
+	struct stats *B; 
+	A = container_of(a, struct stats, list);
+	B = container_of(b, struct stats, list);
+
+	if(A->duration > B->duration){
+		return 1;
+	}
+	else if(A->duration < B->duration){
+		return -1;
+	}
+	else if(A->duration == B->duration){
+		//If the duration is equal, check against mines
+		if(A->mines > B->mines){
+			return 1;
+		}
+		else if(A->mines > B->mines){
+			return -1;
+		}
+		else if(A->mines == B->mines){
+			return 0;
+		}
+	}
+	return 0;
+}
 
 /* Name: record_stats
  * Param: void
@@ -222,7 +261,7 @@ static void record_stats(){
 	node->marked_wrong = mines_marked - right;
 	node->duration = time;
 	list_add_tail(&node->list, &mylist);
- 	 	 
+ 	list_sort(NULL, &mylist, &compare);
 	tmp_stats[0] = '\0'; 
 	linked_counter = 0;
 	list_for_each_entry(pos, &mylist, list){
@@ -231,9 +270,10 @@ static void record_stats(){
 		linked_counter++;
 	}	
 
-	//pr_info("Sorting linked list:\n");
+	pr_info("Sorting linked list:\n");
  	for(i = 0; i < strlen(tmp_stats); i++){
 		stats_view[i] = tmp_stats[i];
+		printk("%c", stats_view[i]);
  	}
 }
 
