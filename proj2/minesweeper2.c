@@ -50,6 +50,7 @@
 #include <linux/list.h>
 #include <linux/slab.h>
 #include <linux/time.h>
+#include <linux/list_sort.h>
 
 #define NUM_ROWS 10
 #define NUM_COLS 10
@@ -99,7 +100,10 @@ static unsigned mines_marked;
     otherwise */
 static bool game_over;
 
+/*Used to calculate runtime of game*/
 static struct timeval then;
+
+/*Used to calculate runtime of game*/
 static struct timeval now;
 
 /**
@@ -109,9 +113,13 @@ static struct timeval now;
  */
 static char game_status[80];
 
-static char to_stats[10];
+/*This buffer writes to ms_stats*/
+static char to_stats[20];
 
+/*This is used to calculate stats*/
 static int right;
+/*number of entries in linked list*/
+static int linked_counter;
 /* GLOBAL VARS GO ABOVE */ 
 
  
@@ -125,6 +133,7 @@ static int right;
  * return %IRQ_NONE.
  */
 static irqreturn_t cs421net_top(int irq, void *cookie);
+
 /**
  * cs421net_bottom() - bottom-half to network ISR
  * @irq: IRQ that was invoked (ignored)
@@ -141,22 +150,25 @@ static irqreturn_t cs421net_top(int irq, void *cookie);
  * Return: always %IRQ_HANDLED
  */
 static irqreturn_t cs421net_bottom(int irq, void *cookie);
-/**/
+
+/*Check defined subroutine for description*/
 static void game_reveal_mines(void);
-/**/
+/*Check defined subroutine for description*/
 static void game_reset(void);
-/**/
+/*Check defined subroutine for description*/
 static ssize_t delta_mines(int, int, int, size_t);
-/**/
+/*Check defined subroutine for description*/
 static bool check_won(void);
-/**/
+/*Check defined subroutine for description*/
 static bool is_authorized(void);
-/**/
+/*Check defined subroutine for description*/
 static bool pos_equals_mark(int);
-/**/
+/*Check defined subroutine for description*/
 static void record_stats(void);
 /**/
-//static void sort_list(void);
+static void clear_revealed(int, int, int);
+/**/
+static void sort_list(void);
 /* PROTOTYPES GO ABOVE */
 
 /* Nodes of linked list */
@@ -164,24 +176,78 @@ struct stats{
 	int mines;
 	int marked_right;
 	int marked_wrong;
+	int duration;
 	struct list_head list;
 };
 
-
-struct list_head some_list;
+/*Compare function to be passed into sort_list*/
+static int cmp(void *, struct list_head *, struct list_head *);
+ 
+struct list_head somelist;
 static LIST_HEAD(mylist); 
 
-/*
-static void sort_list(){
-	struct stats *node, *pos;
-	list_for_each_entry(pos, &mylist, list){
-		scnprintf(to_stats, 9, "%d %d %d\n", pos->mines, pos->marked_right, pos->marked_wrong);
-		strcat(tmp_stats, to_stats);
-	}
-}*/
 
-/* record_stats
- * desc: This function records specific stats to a linked list
+static void sort_list(void){
+	//size of linkedlist
+	struct stats *pos;
+	 
+	int counter, i, dur, mi, r, w;
+	struct stats tosort[linked_counter];
+	counter = 0;
+	list_for_each_entry(pos, &mylist, list){
+		tosort[counter].mines = pos->mines;
+		tosort[counter].marked_right = pos->marked_right;
+		tosort[counter].marked_wrong = pos->marked_wrong;
+		tosort[counter].duration = pos->duration;
+
+		counter++;
+	}	
+	//tosort = vmalloc(counter);
+	/*This sorts the list*/
+	 
+	dur = mi = r = w = 0;
+	if(linked_counter > 1){
+		for(i = 0; i < linked_counter; i++){
+			if((i + 1) <= linked_counter){
+				if(tosort[i].duration > tosort[i + 1].duration){
+					//pr_info("%d GREATER THAN %d\n", tosort[i].duration , tosort[i + 1].duration);
+					dur = tosort[i].duration;
+					mi = tosort[i].mines;
+					r = tosort[i].marked_right;
+					w = tosort[i].marked_wrong;
+
+					tosort[i].duration = tosort[i + 1].duration;
+					tosort[i].mines = tosort[i + 1].mines;
+					tosort[i].marked_right = tosort[i + 1].marked_right;
+					tosort[i].marked_wrong = tosort[i + 1].marked_wrong;
+
+					tosort[i + 1].duration = dur;
+					tosort[i + 1].mines = mi;
+					tosort[i + 1].marked_right = r; 
+					tosort[i + 1].marked_wrong =  w;
+					i = 0;
+				}
+			}
+		}
+	}
+	for(i = 0; i < linked_counter; i++){
+		pr_info("%d %d %d %d\n",tosort[i].duration,tosort[i].mines,tosort[i].marked_right,tosort[i].marked_wrong);
+	}
+	 
+}
+
+/*
+ * Comparator for list_sort function
+ *
+ */
+static int cmp(void * priv, struct list_head * a, struct list_head * b){
+	return 1;
+}
+ 
+
+/* Name: record_stats
+ * Param: void
+ * Desc: This function records specific stats to a linked list
  * that data is written to ms_stats and is accessible via mmap
  *
  */
@@ -189,6 +255,7 @@ static void record_stats(){
 	/*Logic to determine stats here*/
 	struct stats *node, *pos;
 	int i, j, len, marked_correctly, loc, time;
+	do_gettimeofday(&now);
 	time = (int)(now.tv_sec - then.tv_sec);
 
 	marked_correctly = 0;
@@ -213,21 +280,26 @@ static void record_stats(){
 	node->mines = NUM_MINES;
 	node->marked_right = right;
 	node->marked_wrong = mines_marked - right;
-
+	node->duration = time;
 	list_add_tail(&node->list, &mylist);
+	//list_sort(node, &mylist, &cmp);
 	i = 0;
 	while (i < PAGE_SIZE) {
 		stats_view[i++] = ' ';
 	}
 	len = 0;
 	i = 0;
-
+	 
 	tmp_stats[0] = '\0'; 
+	linked_counter = 0;
 	list_for_each_entry(pos, &mylist, list){
-		len += scnprintf(to_stats, 9, "%d %d %d %d\n", time, pos->mines, pos->marked_right, pos->marked_wrong);
+		len += scnprintf(to_stats, 20, "%d %d %d %d\n", pos->duration, pos->mines, pos->marked_right, pos->marked_wrong);
 		strcat(tmp_stats, to_stats);
-	}
+		linked_counter++;
+	}	
 	//RECORD STATS IS WORKING
+	pr_info("Sorting linked list:\n");
+	sort_list();
 	printk("New stats\n");
 	for(i = 0; i < strlen(tmp_stats); i++){
 		stats_view[i] = tmp_stats[i];
@@ -235,17 +307,38 @@ static void record_stats(){
 	}
 }
 
-
+/* Name: clear_revealed
+ * Param: int pos, x, y
+ * Desc: Clears the user_view when you add or remove
+ * a mine.
+ */
+static void clear_revealed(int pos, int x, int y){
+	char sym;
+	sym = user_view[pos];
+	if(sym == '?' ){mines_marked--;}
+	if(sym == '?' || sym == '-' || (sym - '0') >= 1 || (sym - '0') <= 9){user_view[pos] = '.';}
+		
+	if (y + 1 <= 9 && y + 1 >= 0) {pos_equals_mark(10 * (y + 1) + x);}
+	if (y - 1 <= 9 && y - 1 >= 0) {pos_equals_mark(10 * (y - 1) + x);}
+	if (x - 1 <= 9 && x - 1 >= 0) {pos_equals_mark(10 * (y + 0) + (x - 1));}
+	if (x - 1 <= 9 && x - 1 >= 0 && y + 1 <= 9 && y + 1 >= 0) {pos_equals_mark(10 * (y + 1) + (x - 1));}
+	if (x - 1 <= 9 && x - 1 >= 0 && y - 1 <= 9 && y - 1 >= 0) {pos_equals_mark(10 * (y - 1) + (x - 1));}
+	if (x + 1 <= 9 && x + 1 >= 0) {pos_equals_mark(10 * (y + 0) + (x + 1));}
+	if (x + 1 <= 9 && x + 1 >= 0 && y + 1 <= 9 && y + 1 >= 0) {pos_equals_mark(10 * (y + 1) + (x + 1));}
+	if (x + 1 <= 9 && x + 1 >= 0 && y - 1 <= 9 && y - 1 >= 0) {pos_equals_mark(10 * (y - 1) + (x + 1));}
+}
  
 
-/*
- *
- *
- *
+/*Name: pos_equals_mark
+ *Param: int pos, position of userview to check
+ *Desc: This function checks if the user_view at 
+ * position @pos is marked as a mine or not.
  */
 static bool pos_equals_mark(int pos){
-	if(user_view[pos] == '?'){
-		mines_marked--;
+	char sym;
+	sym = user_view[pos];
+	if(sym != '.'){
+		if(sym == '?'){mines_marked--;}
 		user_view[pos] = '.';
 		return true;
 	}
@@ -263,7 +356,6 @@ static bool pos_equals_mark(int pos){
  */
 static ssize_t delta_mines(int ops, int x, int y, size_t count){
 	int pos;
-
 	if(!is_authorized() || net_sig){
 		spin_unlock(&lock);
 		return -EPERM;
@@ -286,6 +378,7 @@ static ssize_t delta_mines(int ops, int x, int y, size_t count){
 			if(!game_board[x][y] && NUM_MINES < 100){
 				game_board[x][y] = true;
 				NUM_MINES += 1;
+				clear_revealed(pos, x, y);
 			}
 			else{
 				//scnprintf(game_status, 80, "Can't add more mines.");
@@ -295,24 +388,12 @@ static ssize_t delta_mines(int ops, int x, int y, size_t count){
 			if(game_board[x][y] && NUM_MINES > 1){
 				game_board[x][y] = false;
 				NUM_MINES += -1;
+				clear_revealed(pos, x, y);
 			}
 			else{
 				//scnprintf(game_status, 80, "Must have atleast 1 mine.");
 			}
 		}
-		
-
-		if(user_view[pos] == '?'){mines_marked--;}
-		user_view[pos] = '.';
-		if (y + 1 <= 9 && y + 1 >= 0) {pos_equals_mark(10 * (y + 1) + x);}
-		if (y - 1 <= 9 && y - 1 >= 0) {pos_equals_mark(10 * (y - 1) + x);}
-		if (x - 1 <= 9 && x - 1 >= 0) {pos_equals_mark(10 * (y + 0) + (x - 1));}
-		if (x - 1 <= 9 && x - 1 >= 0 && y + 1 <= 9 && y + 1 >= 0) {pos_equals_mark(10 * (y + 1) + (x - 1));}
-		if (x - 1 <= 9 && x - 1 >= 0 && y - 1 <= 9 && y - 1 >= 0) {pos_equals_mark(10 * (y - 1) + (x - 1));}
-		if (x + 1 <= 9 && x + 1 >= 0) {pos_equals_mark(10 * (y + 0) + (x + 1));}
-		if (x + 1 <= 9 && x + 1 >= 0 && y + 1 <= 9 && y + 1 >= 0) {pos_equals_mark(10 * (y + 1) + (x + 1));}
-		if (x + 1 <= 9 && x + 1 >= 0 && y - 1 <= 9 && y - 1 >= 0) {pos_equals_mark(10 * (y - 1) + (x + 1));}
-		
 		
 		if(!check_won()){
 			scnprintf(game_status, 80, "%d Marked of %d", mines_marked, NUM_MINES);
@@ -347,7 +428,7 @@ static bool check_won(void){
 	scnprintf(game_status, 80, "%d Marked of %d", mines_marked, NUM_MINES);
 	if (marked_correctly == NUM_MINES && mines_marked == NUM_MINES) {
 		strncpy(game_status, "Game won!\0", 80);
-		do_gettimeofday(&now);
+		 
 		record_stats();
 		game_over = true;
 	}	
@@ -604,6 +685,10 @@ static ssize_t ms_ctl_read(struct file *filp, char __user * ubuf, size_t count,
  *   mXY - Toggle the marking at (X, Y) as either a bomb or not. X and
  *         Y must be integers from zero through nine.
  *   q   - Reveal all mines and quit the current game.
+ *   
+ *   aXY - Adds mine at (X, Y) if the user is root.
+ *
+ *   dXY - Removes mine at (X, Y) if user is root.
  *
  * If the input is none of the above, then return -EINVAL.
  *
@@ -676,7 +761,7 @@ static ssize_t ms_ctl_write(struct file *filp, const char __user * ubuf,
 			return count;
 		}
 
-		scnprintf(game_status, 80, "%d Marked of 10", mines_marked);
+		scnprintf(game_status, 80, "%d Marked of %d", mines_marked, NUM_MINES);
 		//Checks if X & Y are non negative and 0 - 9
 		if (!((x > -1 && x < 10) && (y > -1 && y < 10))) {
 			spin_unlock(&lock);
@@ -686,10 +771,9 @@ static ssize_t ms_ctl_write(struct file *filp, const char __user * ubuf,
 		/* CHECK THAT X & Y in correct positions */
 		else if (game_board[x][y]) {
 			strncpy(game_status, "You lose!\0", 80);
-			record_stats();
 			game_reveal_mines();
-			do_gettimeofday(&now);
 			game_over = true;
+			record_stats();
 			spin_unlock(&lock);
 			return count;
 		}
@@ -824,15 +908,11 @@ static ssize_t ms_ctl_write(struct file *filp, const char __user * ubuf,
 			return count;
 		}
 
-		
-
-
-		/* User quits the game */
 		strncpy(game_status, "You lose!\0", 80);
 		if(!game_over){
 			record_stats();
 		}
-		do_gettimeofday(&now);
+		
 		game_over = true;
 		game_reveal_mines();
 		break;
@@ -891,6 +971,13 @@ static struct miscdevice ms_stats = {
 	.mode = 0444,
 };
 
+/*Name: cs421net_bottom
+ *Param: int irq, interrupt request number
+ *Param: void cookie, not used.
+ *Desc: Top half of interrupt request.
+ * This function will wake up bottom half of request routine 
+ * if the request number matches the network interrupt.
+ */
 static irqreturn_t cs421net_top(int irq, void *cookie){
  	if(irq == CS421NET_IRQ){
 		return IRQ_WAKE_THREAD;
@@ -899,9 +986,14 @@ static irqreturn_t cs421net_top(int irq, void *cookie){
 }
 
 
-
+/*Name: cs421net_bottom
+ *Param: int irq, interrupt request number
+ *Param: void cookie, not used.
+ *Desc: bottom half of interrupt request.  
+ * Parses the data packet sent from the network
+ * to be input into the minesweeper game.
+ */
 static irqreturn_t cs421net_bottom(int irq, void *cookie){
-	//size_t * const len;
 	size_t * const len;
 	size_t i; 
 	int counter;
@@ -936,28 +1028,27 @@ static int __init minesweeper_init(void)
 	pr_info("Initializing the game.\n");
 	if (fixed_mines)
 		pr_info("Using a fixed minefield.\n");
+
+	/*Allocation of dynamic memory*/
 	user_view = vmalloc(PAGE_SIZE);
 	buf = vmalloc(PAGE_SIZE);
 	tmp = vmalloc(PAGE_SIZE);
 	admin_board = vmalloc(PAGE_SIZE);
 	stats_view = vzalloc(PAGE_SIZE);
 	tmp_stats = vmalloc(PAGE_SIZE);
-	//packet = vmalloc(PAGE_SIZE);
 	
 
 	if (!user_view) {
 		pr_err("Could not allocate memory\n");
 		return -ENOMEM;
 	}
-	/* YOUR CODE HERE */
-	/*L21 is very important for this.*/
+	 
 	cs421net_enable();
 	if(request_threaded_irq(CS421NET_IRQ, cs421net_top, cs421net_bottom, 0, "421 HERE TEST" , NULL) == 0){
-		//Worked
-		printk("request IRQ worked successfully\n");
+		pr_info("request IRQ worked successfully\n");
 	}
 	else{
-		printk("request IRQ failed\n");
+		pr_info("request IRQ failed\n");
 	}	
 
 	misc_register(&ms);
@@ -983,14 +1074,12 @@ static void __exit minesweeper_exit(void)
 	vfree(admin_board);
 	vfree(stats_view);
 	vfree(tmp_stats);
-	//vfree(packet);
 
 	list_for_each_entry_safe(entry, tmpP, &mylist, list){
 		kfree(entry);
 	}
 	INIT_LIST_HEAD(&mylist);
 
-	/* YOUR CODE HERE */
 	free_irq(CS421NET_IRQ, NULL);
 	misc_deregister(&ms);
 	misc_deregister(&ms_ctl);
