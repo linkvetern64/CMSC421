@@ -30,6 +30,9 @@ void rewind_fd(void);
 /* function to test threads */
 void *waiting(void *ptr);
 
+/* description over function */
+void print_stats(void);
+
 char * board;
 char * ms_stats_list;
 char status[80];
@@ -51,10 +54,12 @@ int main(void) {
 
 	test_passed = 0;
 	test_failed = 0;
+
 	//init section
 	fd_read_ms = open("/dev/ms", O_RDONLY);
 	fd_read_ms_ctl = open("/dev/ms_ctl", O_RDONLY);
 	fd_write = open("/dev/ms_ctl", O_WRONLY);
+	fd_read_ms_stats = open("/dev/ms_stats", O_RDONLY);
 
 	if(fd_read_ms < 0 || fd_write < 0 || fd_read_ms_ctl < 0){
 		printf("/dev/ms is not loaded.\n");
@@ -62,9 +67,11 @@ int main(void) {
 
 	//mmap section
 	board = mmap(NULL, PAGE_SIZE, PROT_READ, MAP_SHARED, fd_read_ms, 0);
+	ms_stats_list = mmap(NULL, PAGE_SIZE, PROT_READ, MAP_SHARED, fd_read_ms_stats, 0);
 
-
+	//failure to initialize section
 	if(board == MAP_FAILED){printf("test failed on %d\n", __LINE__);}
+	if(ms_stats_list == MAP_FAILED){printf("test failed on %d\n", __LINE__);}
 
 
  	/*------------------------------------------------*/
@@ -255,10 +262,23 @@ int main(void) {
 	 	}
  	print_table();
  	rewind_fd();
-
+ 	print_stats();
  	//Test results
  	printf("Tests %d of %d passed.\n", test_passed, (test_passed + test_failed));
 	return 0;
+}
+
+void print_stats(){
+	printf("Printing Board:\n");
+	char sym;
+	for(int i = 0; i < strlen(ms_stats_list); i++){
+		sym = ms_stats_list[i];
+		//print only numbers, spaces and newlines
+		if((sym - '0' > -1 && sym - '0' <= 9) || sym == ' ' || sym == '\n'){
+			printf("%c", ms_stats_list[i]);		
+		}
+	}
+	printf("\n");
 }
 
 /* @Name: print_table

@@ -167,8 +167,6 @@ static bool pos_equals_mark(int);
 static void record_stats(void);
 /**/
 static void clear_revealed(int, int, int);
-/**/
-static void sort_list(void);
 /* PROTOTYPES GO ABOVE */
 
 /* Nodes of linked list */
@@ -181,68 +179,9 @@ struct stats{
 };
 
 /*Compare function to be passed into sort_list*/
-static int cmp(void *, struct list_head *, struct list_head *);
- 
+  
 struct list_head somelist;
 static LIST_HEAD(mylist); 
-
-
-static void sort_list(void){
-	//size of linkedlist
-	struct stats *pos;
-	 
-	int counter, i, dur, mi, r, w;
-	struct stats tosort[linked_counter];
-	counter = 0;
-	list_for_each_entry(pos, &mylist, list){
-		tosort[counter].mines = pos->mines;
-		tosort[counter].marked_right = pos->marked_right;
-		tosort[counter].marked_wrong = pos->marked_wrong;
-		tosort[counter].duration = pos->duration;
-
-		counter++;
-	}	
-	//tosort = vmalloc(counter);
-	/*This sorts the list*/
-	 
-	dur = mi = r = w = 0;
-	if(linked_counter > 1){
-		for(i = 0; i < linked_counter; i++){
-			if((i + 1) <= linked_counter){
-				if(tosort[i].duration > tosort[i + 1].duration){
-					//pr_info("%d GREATER THAN %d\n", tosort[i].duration , tosort[i + 1].duration);
-					dur = tosort[i].duration;
-					mi = tosort[i].mines;
-					r = tosort[i].marked_right;
-					w = tosort[i].marked_wrong;
-
-					tosort[i].duration = tosort[i + 1].duration;
-					tosort[i].mines = tosort[i + 1].mines;
-					tosort[i].marked_right = tosort[i + 1].marked_right;
-					tosort[i].marked_wrong = tosort[i + 1].marked_wrong;
-
-					tosort[i + 1].duration = dur;
-					tosort[i + 1].mines = mi;
-					tosort[i + 1].marked_right = r; 
-					tosort[i + 1].marked_wrong =  w;
-					i = 0;
-				}
-			}
-		}
-	}
-	for(i = 0; i < linked_counter; i++){
-		pr_info("%d %d %d %d\n",tosort[i].duration,tosort[i].mines,tosort[i].marked_right,tosort[i].marked_wrong);
-	}
-	 
-}
-
-/*
- * Comparator for list_sort function
- *
- */
-static int cmp(void * priv, struct list_head * a, struct list_head * b){
-	return 1;
-}
  
 
 /* Name: record_stats
@@ -254,7 +193,7 @@ static int cmp(void * priv, struct list_head * a, struct list_head * b){
 static void record_stats(){
 	/*Logic to determine stats here*/
 	struct stats *node, *pos;
-	int i, j, len, marked_correctly, loc, time;
+	int i, j, marked_correctly, loc, time;
 	do_gettimeofday(&now);
 	time = (int)(now.tv_sec - then.tv_sec);
 
@@ -282,24 +221,16 @@ static void record_stats(){
 	node->marked_wrong = mines_marked - right;
 	node->duration = time;
 	list_add_tail(&node->list, &mylist);
-	//list_sort(node, &mylist, &cmp);
-	i = 0;
-	while (i < PAGE_SIZE) {
-		stats_view[i++] = ' ';
-	}
-	len = 0;
-	i = 0;
-	 
+ 	 	 
 	tmp_stats[0] = '\0'; 
 	linked_counter = 0;
 	list_for_each_entry(pos, &mylist, list){
-		len += scnprintf(to_stats, 20, "%d %d %d %d\n", pos->duration, pos->mines, pos->marked_right, pos->marked_wrong);
+		scnprintf(to_stats, 15, "%d %d %d %d\n", pos->duration, pos->mines, pos->marked_right, pos->marked_wrong);
 		strcat(tmp_stats, to_stats);
 		linked_counter++;
 	}	
-	//RECORD STATS IS WORKING
-	pr_info("Sorting linked list:\n");
-	sort_list();
+
+	//pr_info("Sorting linked list:\n");
 	printk("New stats\n");
 	for(i = 0; i < strlen(tmp_stats); i++){
 		stats_view[i] = tmp_stats[i];
@@ -479,7 +410,7 @@ static void game_reset()
 	//printk("Current time = %d\n", (int)then->tv_sec);
 	//Need \0 null terminator denotes string 
 	strncpy(game_status, "Game reset\0", 80);
-	NUM_MINES = 2;
+	NUM_MINES = 10;
 	i = 0;
 	game_over = false;
 	mines_marked = 0;
