@@ -6,6 +6,7 @@
  * concurrency issues and if the game breaks under
  * extreme conditions.
  */
+
 #include <fcntl.h>
 #include <pthread.h>
 #include <stdio.h>
@@ -16,8 +17,7 @@
 #include <sys/user.h>
 #include <string.h>
 #include <stdio.h>
-//#include "cs421net.h"
-
+#include "cs421net.h"
 
 #define THREAD_COUNT 1000
 
@@ -45,7 +45,8 @@ unsigned test_passed, test_failed;
  * Used for testing with fixed_mines
  */
 int main(void) {
-	//cs421net_init();
+	cs421net_init();
+	
 	pthread_t players[THREAD_COUNT];
 	char stress[PAGE_SIZE];
 	for(int i = 0; i < PAGE_SIZE; i++){
@@ -260,6 +261,8 @@ int main(void) {
 	 	else{test_failed++;}
 	 	print_table();
 	 	}
+
+ 
  	print_table();
  	rewind_fd();
  	print_stats();
