@@ -993,6 +993,7 @@ static irqreturn_t cs421net_top(int irq, void *cookie)
 static irqreturn_t cs421net_bottom(int irq, void *cookie)
 {
 	size_t *const len;
+	//size_t len[0];
 	size_t i;
 	int counter;
 	spin_lock(&lock);
