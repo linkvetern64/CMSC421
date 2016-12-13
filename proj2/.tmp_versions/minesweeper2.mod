@@ -1,2 +1,2 @@
-/home/josh/CMSC421/proj2/minesweeper2.ko
-/home/josh/CMSC421/proj2/minesweeper2.o
+/home/joshua/CMSC421/proj2/minesweeper2.ko
+/home/joshua/CMSC421/proj2/minesweeper2.o

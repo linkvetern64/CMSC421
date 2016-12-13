@@ -1,3 +1,3 @@
-0xf98f620c	cs421net_enable	/home/josh/CMSC421/proj2/xt_cs421net	EXPORT_SYMBOL
-0xe7051e03	cs421net_disable	/home/josh/CMSC421/proj2/xt_cs421net	EXPORT_SYMBOL
-0xad15acf0	cs421net_get_data	/home/josh/CMSC421/proj2/xt_cs421net	EXPORT_SYMBOL
+0xf98f620c	cs421net_enable	/home/joshua/CMSC421/proj2/xt_cs421net	EXPORT_SYMBOL
+0xe7051e03	cs421net_disable	/home/joshua/CMSC421/proj2/xt_cs421net	EXPORT_SYMBOL
+0xad15acf0	cs421net_get_data	/home/joshua/CMSC421/proj2/xt_cs421net	EXPORT_SYMBOL
