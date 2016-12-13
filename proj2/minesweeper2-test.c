@@ -19,7 +19,7 @@
 #include <stdio.h>
 #include "cs421net.h"
 
-#define THREAD_COUNT 100
+#define THREAD_COUNT 10
 //adjust number if you keep getting race conditions
 #define SLEEP_DUR 10000
 
@@ -41,9 +41,7 @@ void board_reset(void);
 char * board;
 char * ms_stats_list;
 char status[80];
-int UID;
-int TEST_NO;
-int fd_read_ms, fd_read_ms_ctl, fd_write, fd_read_ms_stats;
+int fd_read_ms, fd_read_ms_ctl, fd_write, fd_read_ms_stats, UID, TEST_NO;
 unsigned test_passed, test_failed;
 
 /*
@@ -51,12 +49,7 @@ unsigned test_passed, test_failed;
  */
 int main(void) {
 	cs421net_init();
-	 
-	pthread_t players[THREAD_COUNT];
-	//char stress[PAGE_SIZE];
-	/*for(int i = 0; i < PAGE_SIZE; i++){
-		stress[i] = 'G';
-	}*/
+	
 	//Expected 0 for root, anything else is non-root
 	UID = getuid();
 	test_passed = 0;
@@ -146,8 +139,23 @@ int main(void) {
 	if(!strcmp(status, "4 Marked of 10")){test_passed++;}
 	else{test_failed++;}
  	/*---------------------------------------------------------*/
-	
+ 	
+ 	/* 
+ 	STRESS TESTING WAS REMOVED DUE TO BUG IN PROFESSOR TANGS cs421net_send() function
+	As of 12/13/2016.  (BUG: net writes to board faster than module can handle commands)
+ 	 *//*
 	printf("Test %d: Testing 100 Threads Writing on Network:\n", ++TEST_NO);
+	board_reset();
+ 	for(int i = 0; i < THREAD_COUNT; i++){
+   		if(pthread_create(&players[i], NULL, waiting, (void *)1)){
+      //printf("Failure in creating thread %d\n", i);
+    	}
+  	}
+	  	//Need to join threads so 
+	for(int j = 0; j < THREAD_COUNT; j++){
+	    pthread_join(players[j], NULL);
+	}
+	print_table();*/
 
  	/*---------------------------------------------------------*/
 	printf("\nTest %d: Testing Network Cheat Permissions:\n", ++TEST_NO);
@@ -324,12 +332,6 @@ int main(void) {
 		if(!strcmp(status, "You lose!")){test_passed++;}
 		else{test_failed++;}
 	}
-
- 	/*---------------------------------------------------------*/
- 	
- 	/* STRESS TESTING WAS REMOVED DUE TO BUG IN PROFESSOR TANGS cs421net_send() function
-		 As of 12/13/2016.  (BUG: net writes to board faster than module can handle commands)
- 	*/
 
  	/*---------------------------------------------------------*/
 
