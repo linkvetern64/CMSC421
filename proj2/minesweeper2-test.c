@@ -297,7 +297,9 @@ int main(void) {
 		if(!strcmp(status, "Game won!")){test_passed++;}
 		else{test_failed++;}
 	}
+
  	/*---------------------------------------------------------*/
+
 	if(!UID){
 		printf("\nTest %d: Testing Network Win w/ Deleted Mines:\n", ++TEST_NO);
 		board_reset();
@@ -316,6 +318,31 @@ int main(void) {
 		print_table();
 
 		if(!strcmp(status, "Game won!")){test_passed++;}
+		else{test_failed++;}
+	}
+
+ 	/*---------------------------------------------------------*/
+
+	if(!UID){
+		printf("\nTest %d: Testing Removing All Mines:\n", ++TEST_NO);
+		board_reset();
+		if(write(fd_write, "d00\n" , 4)){/*Expected write to work*/}
+		if(write(fd_write, "d11\n" , 4)){/*Expected write to work*/}
+		if(write(fd_write, "d22\n" , 4)){/*Expected write to work*/}
+		if(write(fd_write, "d33\n" , 4)){/*Expected write to work*/}
+		if(write(fd_write, "d44\n" , 4)){/*Expected write to work*/}
+		if(write(fd_write, "d55\n" , 4)){/*Expected write to work*/}
+		if(write(fd_write, "d66\n" , 4)){/*Expected write to work*/}
+		if(write(fd_write, "d77\n" , 4)){/*Expected write to work*/}
+		if(write(fd_write, "d88\n" , 4)){/*Expected write to work*/}
+		if(write(fd_write, "d99\n" , 4)){/*Expected write to work*/}
+		if(cs421net_send("r99", 3)){usleep(SLEEP_DUR);}
+
+
+
+		print_table();
+
+		if(!strcmp(status, "You lose!")){test_passed++;}
 		else{test_failed++;}
 	}
 
