@@ -20,6 +20,7 @@
 #include "cs421net.h"
 
 #define THREAD_COUNT 100
+//adjust number if you keep getting race conditions
 #define SLEEP_DUR 10000
 
 /* description over subroutine */
@@ -41,7 +42,7 @@ char * board;
 char * ms_stats_list;
 char status[80];
 int UID;
-
+int TEST_NO;
 int fd_read_ms, fd_read_ms_ctl, fd_write, fd_read_ms_stats;
 unsigned test_passed, test_failed;
 
@@ -51,7 +52,7 @@ unsigned test_passed, test_failed;
 int main(void) {
 	cs421net_init();
 	 
-	//pthread_t players[THREAD_COUNT];
+	pthread_t players[THREAD_COUNT];
 	//char stress[PAGE_SIZE];
 	/*for(int i = 0; i < PAGE_SIZE; i++){
 		stress[i] = 'G';
@@ -60,7 +61,7 @@ int main(void) {
 	UID = getuid();
 	test_passed = 0;
 	test_failed = 0;
-
+	 
 	//init section
 	fd_read_ms = open("/dev/ms", O_RDONLY);
 	fd_read_ms_ctl = open("/dev/ms_ctl", O_RDONLY);
@@ -84,10 +85,11 @@ int main(void) {
 
  	/*------------------------------------------------*/
 	//This test will test basic inputs
-	printf("Test 1: Testing Basic Network Input:\n");
+	printf("Test %d: Testing Basic Network Input:\n", ++TEST_NO);
 
 	/*---------------------------------------------------------*/
 
+	/* Testing quitting command via network */
 	printf("\nSending 'q':\n");
 	if(cs421net_send("q", 1)){usleep(SLEEP_DUR);}
  	if(board[0] == '*'){test_passed++;}
@@ -96,6 +98,7 @@ int main(void) {
 
 	/*------------------------------------------------*/
 
+	/* Testing clear board command via network */
 	printf("\nSending 's':\n");
 	if(cs421net_send("s", 1)){usleep(SLEEP_DUR);}
  	print_table();
@@ -104,6 +107,7 @@ int main(void) {
 
 	/*------------------------------------------------*/
 
+	/* Testing marking (0,0) command via network */
 	printf("\nSending 'm00':\n");
 	if(cs421net_send("m00", 3)){usleep(SLEEP_DUR);}
  	if(board[0] == '?'){test_passed++;}
@@ -112,6 +116,7 @@ int main(void) {
 
 	/*------------------------------------------------*/
 
+	/* Testing reveal (9,8) command via network */
 	printf("\nSending 'r98':\n");
 	if(cs421net_send("r98", 3)){usleep(SLEEP_DUR);}
  	if(board[89] == '2'){test_passed++;}
@@ -120,10 +125,11 @@ int main(void) {
 
 	/*---------------------------------------------------------*/
 	
-	printf("Test 2: Testing Network Input Boundaries:\n");
+	printf("Test %d: Testing Network Input Boundaries:\n", ++TEST_NO);
 
 	/*---------------------------------------------------------*/
 
+	/* Testing marking corners of game board */
 	printf("\nMarking 4 Corners:\n");
 	board_reset();
 	if(cs421net_send("m00", 3)){usleep(SLEEP_DUR);}
@@ -132,36 +138,22 @@ int main(void) {
 	if(cs421net_send("m99", 3)){usleep(SLEEP_DUR);}
 	print_table();
 
+	/* Checking to see if the commands successfully planted */
  	if(board[0] == '?' && board[9] == '?' && board[90] == '?' && board[99] == '?'){test_passed++;}
  	else{test_failed++;printf("Failed here\n");}
 	
 	printf("\nChecking Correct Status:\n");
 	if(!strcmp(status, "4 Marked of 10")){test_passed++;}
 	else{test_failed++;}
- 	
  	/*---------------------------------------------------------*/
-
-	//printf("Test 3: Testing Race Conditions:\n");
-	/* Test concurrency locks */
-	/*
- 	printf("\n100 Network Threads Writing to /dev/ms:\n");
-	if(cs421net_send("s", 1)){usleep(SLEEP_DUR);}
-
- 	for(int i = 0; i < THREAD_COUNT; i++){
-   		if(pthread_create(&players[i], NULL, waiting, (void *)1)){
-      //printf("Failure in creating thread %d\n", i);
-    	}
-  	}
-	  	//Need to join threads so 
-	for(int j = 0; j < THREAD_COUNT; j++){
-	    pthread_join(players[j], NULL);
-	}
-	print_table();*/
+	
+	printf("Test %d: Testing 100 Threads Writing on Network:\n", ++TEST_NO);
 
  	/*---------------------------------------------------------*/
-	printf("Test 3: Testing Network Cheat Permissions:\n");
+	printf("\nTest %d: Testing Network Cheat Permissions:\n", ++TEST_NO);
 	board_reset();
 
+	/* This condition will always hit unless user is root in local space */
 	if(UID){
 		printf("\n Testing Network Permissions as User:\n");
 		if(cs421net_send("a69", 3)){usleep(SLEEP_DUR);}
@@ -195,9 +187,10 @@ int main(void) {
 	
  	/*---------------------------------------------------------*/
 
-	printf("Test 4: Testing Local Cheat Permissions:\n");
+	printf("\nTest %d: Testing Local Cheat Permissions:\n", ++TEST_NO);
 	board_reset();
 
+	/* This condition will always hit unless user is root in local space */
 	if(UID){
 		printf("\n Testing Local Permissions as User:\n");
 		if(write(fd_write, "a69\n" , 4)){/*Expected write to work*/}
@@ -215,30 +208,166 @@ int main(void) {
 	}	
 	else{
 		printf("\n Testing Local Permissions as Root:\n");
-		if(write(fd_write, "a69\n" , 5)){/*Expected write to work*/}
-		if(write(fd_write, "r69\n" , 5)){/*Expected write to work*/}
+		if(write(fd_write, "a69\n" , 4)){/*Expected write to work*/}
+		if(write(fd_write, "r69\n" , 4)){/*Expected write to work*/}
 		if(board[96] == '*'){test_passed++;}
 		else{test_failed++;}
 		print_table();
 		board_reset();
 
-		if(write(fd_write, "d00\n" , 5)){/*Expected write to work*/}
-		if(write(fd_write, "r00\n" , 5)){/*Expected write to work*/}
+		if(write(fd_write, "d00\n" , 4)){/*Expected write to work*/}
+		if(write(fd_write, "r00\n" , 4)){/*Expected write to work*/}
 		if(board[0] == '1'){test_passed++;}
 		else{test_failed++;}
 		print_table();
 	}
 
  	/*---------------------------------------------------------*/
+	printf("\nTest %d: Testing Network Win :\n", ++TEST_NO);
+	board_reset();
+	
+	/*Marking down (0,0) - (9,9) should result in a won game*/
+	if(cs421net_send("m00", 3)){usleep(SLEEP_DUR);}
+	if(cs421net_send("m11", 3)){usleep(SLEEP_DUR);}
+	if(cs421net_send("m22", 3)){usleep(SLEEP_DUR);}
+	if(cs421net_send("m33", 3)){usleep(SLEEP_DUR);}
+	if(cs421net_send("m44", 3)){usleep(SLEEP_DUR);}
+	if(cs421net_send("m55", 3)){usleep(SLEEP_DUR);}
+	if(cs421net_send("m66", 3)){usleep(SLEEP_DUR);}
+	if(cs421net_send("m77", 3)){usleep(SLEEP_DUR);}
+	if(cs421net_send("m88", 3)){usleep(SLEEP_DUR);}
+	if(cs421net_send("m99", 3)){usleep(SLEEP_DUR);}
 
+	print_table();
+
+	if(!strcmp(status, "Game won!")){test_passed++;}
+	else{test_failed++;}
+ 	/*---------------------------------------------------------*/
+
+	printf("\nTest %d: Testing Network Overmarking :\n", ++TEST_NO);
+	board_reset();
+
+	/*Marking down (0,0) - (9,9) with extra coordinates */
+	if(cs421net_send("m00", 3)){usleep(SLEEP_DUR);}
+	if(cs421net_send("m11", 3)){usleep(SLEEP_DUR);}
+	if(cs421net_send("m22", 3)){usleep(SLEEP_DUR);}
+	if(cs421net_send("m33", 3)){usleep(SLEEP_DUR);}
+	if(cs421net_send("m44", 3)){usleep(SLEEP_DUR);}
+	if(cs421net_send("m47", 3)){usleep(SLEEP_DUR);}
+	if(cs421net_send("m55", 3)){usleep(SLEEP_DUR);}
+	if(cs421net_send("m66", 3)){usleep(SLEEP_DUR);}
+	if(cs421net_send("m77", 3)){usleep(SLEEP_DUR);}
+	if(cs421net_send("m88", 3)){usleep(SLEEP_DUR);}
+	if(cs421net_send("m89", 3)){usleep(SLEEP_DUR);}
+	if(cs421net_send("m99", 3)){usleep(SLEEP_DUR);}
+
+	print_table();
+
+	if(!strcmp(status, "12 Marked of 10")){test_passed++;}
+	else{test_failed++;}
+ 	/*---------------------------------------------------------*/
+
+	if(!UID){
+		printf("\nTest %d: Testing Network Win w/ Added Mines:\n", ++TEST_NO);
+		board_reset();
+		if(write(fd_write, "a69\n" , 4)){/*Expected write to work*/}
+		if(cs421net_send("m00", 3)){usleep(SLEEP_DUR);}
+		if(cs421net_send("m11", 3)){usleep(SLEEP_DUR);}
+		if(cs421net_send("m22", 3)){usleep(SLEEP_DUR);}
+		if(cs421net_send("m33", 3)){usleep(SLEEP_DUR);}
+		if(cs421net_send("m44", 3)){usleep(SLEEP_DUR);}
+		if(cs421net_send("m55", 3)){usleep(SLEEP_DUR);}
+		if(cs421net_send("m66", 3)){usleep(SLEEP_DUR);}
+		if(cs421net_send("m77", 3)){usleep(SLEEP_DUR);}
+		if(cs421net_send("m88", 3)){usleep(SLEEP_DUR);}
+		if(cs421net_send("m99", 3)){usleep(SLEEP_DUR);}
+		if(cs421net_send("m69", 3)){usleep(SLEEP_DUR);}
+
+
+		print_table();
+
+		if(!strcmp(status, "Game won!")){test_passed++;}
+		else{test_failed++;}
+	}
+ 	/*---------------------------------------------------------*/
+	if(!UID){
+		printf("\nTest %d: Testing Network Win w/ Deleted Mines:\n", ++TEST_NO);
+		board_reset();
+		if(write(fd_write, "d00\n" , 4)){/*Expected write to work*/}
+		if(cs421net_send("m11", 3)){usleep(SLEEP_DUR);}
+		if(cs421net_send("m22", 3)){usleep(SLEEP_DUR);}
+		if(cs421net_send("m33", 3)){usleep(SLEEP_DUR);}
+		if(cs421net_send("m44", 3)){usleep(SLEEP_DUR);}
+		if(cs421net_send("m55", 3)){usleep(SLEEP_DUR);}
+		if(cs421net_send("m66", 3)){usleep(SLEEP_DUR);}
+		if(cs421net_send("m77", 3)){usleep(SLEEP_DUR);}
+		if(cs421net_send("m88", 3)){usleep(SLEEP_DUR);}
+		if(cs421net_send("m99", 3)){usleep(SLEEP_DUR);}
+
+
+		print_table();
+
+		if(!strcmp(status, "Game won!")){test_passed++;}
+		else{test_failed++;}
+	}
+
+ 	/*---------------------------------------------------------*/
+
+	if(!UID){
+		printf("\nTest %d: Testing Network Loss w/ Added Mines:\n", ++TEST_NO);
+		board_reset();
+		if(write(fd_write, "a69\n" , 4)){/*Expected write to work*/}
+		if(cs421net_send("r69", 3)){usleep(SLEEP_DUR);}
+
+		print_table();
+
+		if(!strcmp(status, "You lose!")){test_passed++;}
+		else{test_failed++;}
+	}
+
+ 	/*---------------------------------------------------------*/
+ 	
+ 	/* STRESS TESTING WAS REMOVED DUE TO BUG IN PROFESSOR TANGS cs421net_send() function
+		 As of 12/13/2016.  (BUG: net writes to board faster than module can handle commands)
+ 	*/
+
+ 	/*---------------------------------------------------------*/
+
+	printf("\nTest %d: Testing Statistics View :\n", ++TEST_NO);
+	printf("***Note: To clear stats reload minesweeper2 module ***\n");
+	print_stats();
+
+ 	/*---------------------------------------------------------*/
+
+	printf("\nTest %d: Adding & Sorting Statistics :\n", ++TEST_NO);
+	printf("***Note: This will take up to 10 seconds***\n");
+	board_reset();
+	printf("Adding 1 second record...\n");
+	sleep(1);
+	if(cs421net_send("q", 1)){usleep(SLEEP_DUR);}
+	board_reset();
+	printf("Adding 3 second record...\n");
+	sleep(3);
+	if(cs421net_send("q", 1)){usleep(SLEEP_DUR);}
+	board_reset();
+	printf("Adding 4 second record...\n");
+	sleep(4);
+	if(cs421net_send("q", 1)){usleep(SLEEP_DUR);}
+	board_reset();
+	printf("Adding 2 second record...\n");
+	sleep(2);
+	if(cs421net_send("q", 1)){usleep(SLEEP_DUR);}
+ 	print_stats();
+
+ 	/*---------------------------------------------------------*/
 
  	//Test results
- 	printf("Tests %d of %d passed.\n", test_passed, (test_passed + test_failed));
+ 	printf("\nTests %d of %d passed.\n", test_passed, (test_passed + test_failed));
 	return 0;
 }
 
 void print_stats(){
-	printf("Printing Board:\n");
+	printf("Printing Statistics:\n");
 	char sym;
 	for(int i = 0; i < strlen(ms_stats_list); i++){
 		sym = ms_stats_list[i];
